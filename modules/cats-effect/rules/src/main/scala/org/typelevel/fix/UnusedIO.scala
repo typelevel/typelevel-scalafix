@@ -48,25 +48,25 @@ class UnusedIO extends SemanticRule("UnusedIO") {
       lazy val self: PartialFunction[Stat, Patch] = {
         case ref @ Term.Name(_) =>
           checkSignature(outer, ref)
-        case apply @ Term.ApplyInfix(_, op, _, _) =>
+        case Term.ApplyInfix(_, op, _, _) =>
           checkSignature(outer, op)
-        case apply @ Term.Apply(fn @ Term.Name(_), _) =>
+        case Term.Apply(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
-        case select @ Term.Select(_, prop @ Term.Name(_)) =>
+        case Term.Select(_, prop @ Term.Name(_)) =>
           checkSignature(outer, prop)
-        case applyMethod @ Term.Apply(Term.Select(_, method), _) =>
+        case Term.Apply(Term.Select(_, method), _) =>
           checkSignature(outer, method)
-        case mat @ Term.Match(_, cases) =>
+        case Term.Match(_, cases) =>
           cases.map {
             case cse if self.isDefinedAt(cse.body) =>
               checkInner(cse.body)
           }.asPatch
-        case block @ Term.Block(stats) =>
+        case Term.Block(stats) =>
           stats.map {
             case stat if self.isDefinedAt(stat) =>
               checkInner(stat)
           }.asPatch
-        case apply @ Term.ApplyType(term, _) if self.isDefinedAt(term) =>
+        case Term.ApplyType(term, _) if self.isDefinedAt(term) =>
           checkInner(term)
       }
 
