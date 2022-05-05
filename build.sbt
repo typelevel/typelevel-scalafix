@@ -1,6 +1,8 @@
 import sbt.internal.ProjectMatrix
 lazy val V = _root_.scalafix.sbt.BuildInfo
 
+ThisBuild / tlBaseVersion := "0.0"
+
 // Cannot support Scala 3.x until Scalafix supports 3.x for semantic rules
 // lazy val scala3Version = "3.1.2"
 lazy val rulesCrossVersions = Seq(V.scala213, V.scala212)
@@ -8,34 +10,17 @@ lazy val rulesCrossVersions = Seq(V.scala213, V.scala212)
 lazy val CatsVersion       = "2.7.0"
 lazy val CatsEffectVersion = "3.3.11"
 
-inThisBuild(
-  List(
-    organization := "org.typelevel",
-    homepage     := Some(url("https://github.com/typelevel/typelevel-scalafix")),
-    licenses := List(
-      "Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")
-    ),
-    developers := List(
-      Developer(
-        "DavidGregory084",
-        "David Gregory",
-        "@DavidGregory084",
-        url("https://github.com/DavidGregory084")
-      )
-    ),
-    semanticdbEnabled := true,
-    // Needed to retrieve information about inferred types - not needed for now
-    // semanticdbOptions += "-P:semanticdb:synthetics:on",
-    semanticdbVersion          := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
-  )
+ThisBuild / developers ++= List(
+  tlGitHubDev("DavidGregory084", "David Gregory")
 )
+
+ThisBuild / semanticdbEnabled          := true
+ThisBuild / semanticdbVersion          := scalafixSemanticdb.revision
+ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
 
 lazy val root = (project in file("."))
   .aggregate(cats, catsEffect)
-  .settings(
-    publish / skip := true
-  )
+  .enablePlugins(NoPublishPlugin)
 
 // typelevel/cats Scalafix rules
 lazy val cats =
@@ -45,12 +30,6 @@ lazy val catsRules = rulesModule("cats")
 
 lazy val catsInput = inputModule("cats")
   .settings(
-    scalacOptions ++= {
-      if (scalaBinaryVersion.value == "2.12")
-        Seq("-Ypartial-unification")
-      else
-        Seq.empty
-    },
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % CatsVersion
     )
@@ -88,7 +67,6 @@ lazy val catsEffectTestsAggregate = testsAggregateModule("cats-effect", catsEffe
 
 lazy val catsEffectTests =
   testsModule("cats-effect", catsEffectRules, catsEffectInput, catsEffectOutput)
-
 
 // Project definition helpers
 def rulesModule(name: String) = ProjectMatrix(name, file(s"modules/$name/rules"))
@@ -130,9 +108,7 @@ def outputModule(name: String) = ProjectMatrix(s"$name-output", file(s"modules/$
 def testsAggregateModule(name: String, testsMod: ProjectMatrix) =
   Project(s"$name-tests", file(s"target/$name-tests-aggregate"))
     .aggregate(testsMod.projectRefs: _*)
-    .settings(
-      publish / skip := true
-    )
+    .enablePlugins(NoPublishPlugin)
 
 def testsModule(
   name: String,
@@ -141,7 +117,6 @@ def testsModule(
   outputMod: ProjectMatrix
 ) = ProjectMatrix(s"$name-tests", file(s"modules/$name/tests"))
   .settings(
-    publish / skip := true,
     scalafixTestkitOutputSourceDirectories :=
       TargetAxis
         .resolve(outputMod, Compile / unmanagedSourceDirectories)
@@ -176,4 +151,4 @@ def testsModule(
     settings = Seq()
   )
   .dependsOn(rulesMod)
-  .enablePlugins(ScalafixTestkitPlugin)
+  .enablePlugins(NoPublishPlugin, ScalafixTestkitPlugin)
