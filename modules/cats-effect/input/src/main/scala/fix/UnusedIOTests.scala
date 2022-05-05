@@ -7,7 +7,10 @@ import cats.data.EitherT
 import cats.data.OptionT
 import cats.effect._
 import cats.effect.unsafe.implicits.global
+import cats.syntax.all._
+import java.util.concurrent.TimeoutException
 import scala.util.control.NonFatal
+import scala.concurrent.duration._
 
 object UnusedIOTests {
   def unusedIOCompanion = {
@@ -238,5 +241,12 @@ object UnusedIOTests {
     OptionT(IO.some(1)).value
     EitherT(IO.println("foo").attempt).value
     IO.println("foo")
+  }
+
+  // TODO: Implement checks using inferred type information
+  def unusedExtension = {
+    IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
+
+    IO.println("bar")
   }
 }
