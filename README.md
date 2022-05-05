@@ -36,15 +36,13 @@ rules = [
 > scalafix UnusedIO
 ```
 
-## Rules
+## Rules for cats
 
-### typelevel-scalafix-cats
-
-#### MapSequence
+### MapSequence
 
 This rule detects call sequences like `.map(f).sequence` and `.map(f).sequence_`, since they can be replaced by `.traverse(f)` and `.traverse_(f)` respectively.
 
-Examples:
+**Examples**
 
 ```scala
 NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /*
@@ -52,13 +50,13 @@ NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /*
 .map(f).sequence can be replaced by .traverse(f) */
 ```
 
-### typelevel-scalafix-cats-effect
+## Rules for cats-effect
 
-#### UnusedIO
+### UnusedIO
 
 This rule detects discarded IO expressions, since those expressions will not run as part of an IO program unless they are composed into the final result.
 
-Examples:
+**Examples**
 
 ```scala
 {
