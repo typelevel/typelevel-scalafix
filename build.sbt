@@ -95,11 +95,13 @@ def aggregateModule(
 
 def inputModule(name: String) = ProjectMatrix(s"$name-input", file(s"modules/$name/input"))
   .defaultAxes(VirtualAxis.jvm)
+  .settings(headerSources / excludeFilter := AllPassFilter, tlFatalWarnings := false)
   .jvmPlatform(scalaVersions = rulesCrossVersions /*:+ scala3Version*/ )
   .enablePlugins(NoPublishPlugin)
 
 def outputModule(name: String) = ProjectMatrix(s"$name-output", file(s"modules/$name/output"))
   .defaultAxes(VirtualAxis.jvm)
+  .settings(headerSources / excludeFilter := AllPassFilter, tlFatalWarnings := false)
   .jvmPlatform(scalaVersions = rulesCrossVersions /*:+ scala3Version*/ )
   .enablePlugins(NoPublishPlugin)
 
