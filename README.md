@@ -21,7 +21,7 @@ ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-
 
 ## Usage
 
-Once enabled, you can run the rules provided by adding them to your .scalafix.conf file, or by running individual rules using the `scalafix` command in sbt.
+Once enabled, you can configure the rules that will run when you use the `scalafix` command by adding them to your .scalafix.conf file, or run individual rules by providing them as arguments to the `scalafix` command.
 
 ```
 // .scalafix.conf
