@@ -91,19 +91,17 @@ def aggregateModule(
         outputMod.projectRefs ++
         testsMod.projectRefs: _*
     )
-    .settings(
-      publish / skip := true
-    )
+    .enablePlugins(NoPublishPlugin)
 
 def inputModule(name: String) = ProjectMatrix(s"$name-input", file(s"modules/$name/input"))
-  .settings(publish / skip := true)
   .defaultAxes(VirtualAxis.jvm)
   .jvmPlatform(scalaVersions = rulesCrossVersions /*:+ scala3Version*/ )
+  .enablePlugins(NoPublishPlugin)
 
 def outputModule(name: String) = ProjectMatrix(s"$name-output", file(s"modules/$name/output"))
-  .settings(publish / skip := true)
   .defaultAxes(VirtualAxis.jvm)
   .jvmPlatform(scalaVersions = rulesCrossVersions /*:+ scala3Version*/ )
+  .enablePlugins(NoPublishPlugin)
 
 def testsAggregateModule(name: String, testsMod: ProjectMatrix) =
   Project(s"$name-tests", file(s"target/$name-tests-aggregate"))
