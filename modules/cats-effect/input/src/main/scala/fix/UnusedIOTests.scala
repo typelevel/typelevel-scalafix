@@ -9,7 +9,6 @@ import cats.effect._
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import java.util.concurrent.TimeoutException
-import scala.util.control.NonFatal
 import scala.concurrent.duration._
 
 object UnusedIOTests {
