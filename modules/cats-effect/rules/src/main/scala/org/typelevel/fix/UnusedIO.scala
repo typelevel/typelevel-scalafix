@@ -1,3 +1,19 @@
+/*
+ * Copyright 2022 Typelevel
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.typelevel.fix
 
 import scalafix.v1._
@@ -32,25 +48,25 @@ class UnusedIO extends SemanticRule("UnusedIO") {
       lazy val self: PartialFunction[Stat, Patch] = {
         case ref @ Term.Name(_) =>
           checkSignature(outer, ref)
-        case apply @ Term.ApplyInfix(_, op, _, _) =>
+        case Term.ApplyInfix(_, op, _, _) =>
           checkSignature(outer, op)
-        case apply @ Term.Apply(fn @ Term.Name(_), _) =>
+        case Term.Apply(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
-        case select @ Term.Select(_, prop @ Term.Name(_)) =>
+        case Term.Select(_, prop @ Term.Name(_)) =>
           checkSignature(outer, prop)
-        case applyMethod @ Term.Apply(Term.Select(_, method), _) =>
+        case Term.Apply(Term.Select(_, method), _) =>
           checkSignature(outer, method)
-        case mat @ Term.Match(_, cases) =>
+        case Term.Match(_, cases) =>
           cases.map {
             case cse if self.isDefinedAt(cse.body) =>
               checkInner(cse.body)
           }.asPatch
-        case block @ Term.Block(stats) =>
+        case Term.Block(stats) =>
           stats.map {
             case stat if self.isDefinedAt(stat) =>
               checkInner(stat)
           }.asPatch
-        case apply @ Term.ApplyType(term, _) if self.isDefinedAt(term) =>
+        case Term.ApplyType(term, _) if self.isDefinedAt(term) =>
           checkInner(term)
       }
 
@@ -90,7 +106,7 @@ class UnusedIO extends SemanticRule("UnusedIO") {
 }
 
 final case class UnusedIODiagnostic(t: Tree) extends Diagnostic {
-  override def message: String     = "This IO expression is not used."
-  override def position: Position  = t.pos
-  override def categoryID: String  = "unusedIO"
+  override def message: String    = "This IO expression is not used."
+  override def position: Position = t.pos
+  override def categoryID: String = "unusedIO"
 }
