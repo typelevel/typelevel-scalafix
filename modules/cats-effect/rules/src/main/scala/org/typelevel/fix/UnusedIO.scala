@@ -106,7 +106,7 @@ class UnusedIO extends SemanticRule("UnusedIO") {
 }
 
 final case class UnusedIODiagnostic(t: Tree) extends Diagnostic {
-  override def message: String     = "This IO expression is not used."
-  override def position: Position  = t.pos
-  override def categoryID: String  = "unusedIO"
+  override def message: String    = "This IO expression is not used."
+  override def position: Position = t.pos
+  override def categoryID: String = "unusedIO"
 }
