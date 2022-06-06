@@ -26,19 +26,19 @@ Once enabled, you can configure the rules that will run when you use the `scalaf
 ```
 // .scalafix.conf
 rules = [
-  UnusedIO
-  MapSequence
+  TypelevelUnusedIO
+  TypelevelMapSequence
 ]
 ```
 
 ```
 // in the sbt shell
-> scalafix UnusedIO
+> scalafix TypelevelUnusedIO
 ```
 
 ## Rules for cats
 
-### MapSequence
+### TypelevelMapSequence
 
 This rule detects call sequences like `.map(f).sequence` and `.map(f).sequence_`, since they can be replaced by `.traverse(f)` and `.traverse_(f)` respectively.
 
@@ -52,7 +52,7 @@ NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /*
 
 ## Rules for cats-effect
 
-### UnusedIO
+### TypelevelUnusedIO
 
 This rule detects discarded IO expressions, since those expressions will not run as part of an IO program unless they are composed into the final result.
 
