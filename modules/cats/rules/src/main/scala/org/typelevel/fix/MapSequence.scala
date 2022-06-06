@@ -19,7 +19,7 @@ package org.typelevel.fix
 import scalafix.v1._
 import scala.meta._
 
-class MapSequence extends SemanticRule("MapSequence") {
+class MapSequence extends SemanticRule("TypelevelMapSequence") {
   override def fix(implicit doc: SemanticDocument): Patch = {
     doc.tree.collect {
       // fa.map(f).sequence

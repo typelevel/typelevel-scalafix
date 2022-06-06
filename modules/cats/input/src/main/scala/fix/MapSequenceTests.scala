@@ -1,5 +1,5 @@
 /*
-rule = MapSequence
+rule = TypelevelMapSequence
  */
 package fix
 
@@ -10,67 +10,75 @@ import cats.syntax.all._
 
 object MapSequenceTests {
   def listMapSequence = {
-    List(1, 2, 3).map(Either.right[Unit, Int]).sequence /* assert: MapSequence.mapSequence
+    List(1, 2, 3).map(Either.right[Unit, Int]).sequence /* assert: TypelevelMapSequence.mapSequence
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence can be replaced by .traverse(f) */
   }
 
   def nelMapSequence = {
-    NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /* assert: MapSequence.mapSequence
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    NonEmptyList /* assert: TypelevelMapSequence.mapSequence
+    ^
     .map(f).sequence can be replaced by .traverse(f) */
+      .one(1)
+      .map(Const.apply[Int, String])
+      .sequence
   }
 
   def fMapSequence[F[_], G[_]](implicit
     F: Traverse[F] with Applicative[F],
     G: Applicative[G]
   ) = {
-    F.pure(1).map(i => G.pure(i)).sequence /* assert: MapSequence.mapSequence
+    F.pure(1).map(i => G.pure(i)).sequence /* assert: TypelevelMapSequence.mapSequence
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence can be replaced by .traverse(f) */
 
-    F.sequence(F.pure(1).map(i => G.pure(i))) /* assert: MapSequence.mapSequence
+    F.sequence(F.pure(1).map(i => G.pure(i))) /* assert: TypelevelMapSequence.mapSequence
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence can be replaced by .traverse(f) */
 
-    F.map(F.pure(1))(i => G.pure(i)).sequence /* assert: MapSequence.mapSequence
+    F.map(F.pure(1))(i => G.pure(i)).sequence /* assert: TypelevelMapSequence.mapSequence
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence can be replaced by .traverse(f) */
 
-    F.sequence(F.map(F.pure(1))(i => G.pure(i))) /* assert: MapSequence.mapSequence
+    F.sequence(F.map(F.pure(1))(i => G.pure(i))) /* assert: TypelevelMapSequence.mapSequence
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence can be replaced by .traverse(f) */
   }
 
   def listMapSequence_ = {
-    List(1, 2, 3).map(Either.right[Unit, Int]).sequence_ /* assert: MapSequence.mapSequence_
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    List(1, 2, 3) /* assert: TypelevelMapSequence.mapSequence_
+    ^
     .map(f).sequence_ can be replaced by .traverse_(f) */
+      .map(Either.right[Unit, Int])
+      .sequence_
   }
 
   def nelMapSequence_ = {
-    NonEmptyList.one(1).map(Const.of[String](_)).sequence_ /* assert: MapSequence.mapSequence_
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    NonEmptyList /* assert: TypelevelMapSequence.mapSequence_
+    ^
     .map(f).sequence_ can be replaced by .traverse_(f) */
+      .one(1)
+      .map(Const.of[String](_))
+      .sequence_
   }
 
   def fMapSequence_[F[_], G[_]](implicit
     F: Traverse[F] with Applicative[F],
     G: Applicative[G]
   ) = {
-    F.pure(1).map(i => G.pure(i)).sequence_ /* assert: MapSequence.mapSequence_
+    F.pure(1).map(i => G.pure(i)).sequence_ /* assert: TypelevelMapSequence.mapSequence_
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence_ can be replaced by .traverse_(f) */
 
-    F.sequence_(F.pure(1).map(i => G.pure(i))) /* assert: MapSequence.mapSequence_
+    F.sequence_(F.pure(1).map(i => G.pure(i))) /* assert: TypelevelMapSequence.mapSequence_
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence_ can be replaced by .traverse_(f) */
 
-    F.map(F.pure(1))(i => G.pure(i)).sequence_ /* assert: MapSequence.mapSequence_
+    F.map(F.pure(1))(i => G.pure(i)).sequence_ /* assert: TypelevelMapSequence.mapSequence_
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence_ can be replaced by .traverse_(f) */
 
-    F.sequence_(F.map(F.pure(1))(i => G.pure(i))) /* assert: MapSequence.mapSequence_
+    F.sequence_(F.map(F.pure(1))(i => G.pure(i))) /* assert: TypelevelMapSequence.mapSequence_
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     .map(f).sequence_ can be replaced by .traverse_(f) */
   }

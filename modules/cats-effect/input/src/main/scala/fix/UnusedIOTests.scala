@@ -1,5 +1,5 @@
 /*
-rule = UnusedIO
+rule = TypelevelUnusedIO
  */
 package fix
 
@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 
 object UnusedIOTests {
   def unusedIOCompanion = {
-    IO.println("foo") /* assert: UnusedIO.unusedIO
+    IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^^^^^^^^^^^^^
     This IO expression is not used. */
     IO.println("bar")
@@ -27,7 +27,7 @@ object UnusedIOTests {
   def unusedDefApply = {
     def foo = IO.pure("foo")
 
-    foo /* assert: UnusedIO.unusedIO
+    foo /* assert: TypelevelUnusedIO.unusedIO
     ^^^
     This IO expression is not used. */
 
@@ -44,7 +44,7 @@ object UnusedIOTests {
   def unusedNullaryDefApply = {
     def foo() = IO.pure("foo")
 
-    foo() /* assert: UnusedIO.unusedIO
+    foo() /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^
     This IO expression is not used. */
 
@@ -61,7 +61,7 @@ object UnusedIOTests {
   def unusedRef = {
     val foo = IO.println("foo")
 
-    foo /* assert: UnusedIO.unusedIO
+    foo /* assert: TypelevelUnusedIO.unusedIO
     ^^^
     This IO expression is not used. */
 
@@ -78,7 +78,7 @@ object UnusedIOTests {
   def unusedDefWithSelect = {
     def foo() = IO.pure("foo")
 
-    foo().map(_.length) /* assert: UnusedIO.unusedIO
+    foo().map(_.length) /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^^^^^^^^^^^^^^^
     This IO expression is not used. */
 
@@ -93,7 +93,7 @@ object UnusedIOTests {
   }
 
   def unusedInfix = {
-    IO.pure("foo") >> IO.println("bar") /* assert: UnusedIO.unusedIO
+    IO.pure("foo") >> IO.println("bar") /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     This IO expression is not used. */
     IO.println("baz")
@@ -107,7 +107,7 @@ object UnusedIOTests {
   def unusedTypeApply = {
     def never[A] = IO.never[A]
 
-    never[Int] /* assert: UnusedIO.unusedIO
+    never[Int] /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^^^^^^
     This IO expression is not used. */
 
@@ -122,7 +122,7 @@ object UnusedIOTests {
   }
 
   def unusedMatch = {
-    1 match { /* assert: UnusedIO.unusedIO
+    1 match { /* assert: TypelevelUnusedIO.unusedIO
     ^
     This IO expression is not used. */
       case _ =>
@@ -135,7 +135,7 @@ object UnusedIOTests {
   def unusedForYieldVal = {
     for {
       _ <- IO.println("foo")
-      _ = IO.println("bar") /* assert: UnusedIO.unusedIO
+      _ = IO.println("bar") /* assert: TypelevelUnusedIO.unusedIO
           ^^^^^^^^^^^^^^^^^
           This IO expression is not used. */
     } yield "baz"
@@ -144,7 +144,7 @@ object UnusedIOTests {
   def unusedForYieldBlock = {
     for {
       _ <- IO.println("foo")
-      _ = { /* assert: UnusedIO.unusedIO
+      _ = { /* assert: TypelevelUnusedIO.unusedIO
           ^
           This IO expression is not used. */
         IO.println("bar")
@@ -155,7 +155,7 @@ object UnusedIOTests {
   def unusedMatchCase = {
     1 match {
       case _ =>
-        IO.println("foo") /* assert: UnusedIO.unusedIO
+        IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
         ^^^^^^^^^^^^^^^^^
         This IO expression is not used. */
         IO.println("bar")
@@ -172,7 +172,7 @@ object UnusedIOTests {
 
   def unusedObjectBody = {
     object unusedIO {
-      IO.println("foo") /* assert: UnusedIO.unusedIO
+      IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
       ^^^^^^^^^^^^^^^^^
       This IO expression is not used. */
     }
@@ -180,7 +180,7 @@ object UnusedIOTests {
 
   def unusedPrimaryConstructor = {
     class unusedIO {
-      IO.println("foo") /* assert: UnusedIO.unusedIO
+      IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
       ^^^^^^^^^^^^^^^^^
       This IO expression is not used. */
     }
@@ -190,7 +190,7 @@ object UnusedIOTests {
     class unusedIO {
       def this(i: Int) = {
         this()
-        IO.println("foo") /* assert: UnusedIO.unusedIO
+        IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
         ^^^^^^^^^^^^^^^^^
         This IO expression is not used. */
       }
@@ -198,20 +198,20 @@ object UnusedIOTests {
   }
 
   def unusedWhileStat = {
-    while (true) IO.println("foo") /* assert: UnusedIO.unusedIO
+    while (true) IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
                  ^^^^^^^^^^^^^^^^^
                  This IO expression is not used. */
   }
 
   def unusedForStat = {
-    for (i <- (0 to 10)) IO.println("foo") /* assert: UnusedIO.unusedIO
+    for (i <- (0 to 10)) IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
                          ^^^^^^^^^^^^^^^^^
                          This IO expression is not used. */
   }
 
   def unusedTryFinally = {
     try println("foo")
-    finally IO.println("bar") /* assert: UnusedIO.unusedIO
+    finally IO.println("bar") /* assert: TypelevelUnusedIO.unusedIO
             ^^^^^^^^^^^^^^^^^
             This IO expression is not used. */
   }
@@ -222,7 +222,7 @@ object UnusedIOTests {
   }
 
   def unusedStringInterpolation = {
-    s"${IO.pure("foo")}" /* assert: UnusedIO.unusedIO
+    s"${IO.pure("foo")}" /* assert: TypelevelUnusedIO.unusedIO
         ^^^^^^^^^^^^^^
         This IO expression is not used. */
   }

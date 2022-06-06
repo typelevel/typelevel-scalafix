@@ -19,7 +19,7 @@ package org.typelevel.fix
 import scalafix.v1._
 import scala.meta._
 
-class UnusedIO extends SemanticRule("UnusedIO") {
+class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
   val IOSym = SymbolMatcher.exact("cats/effect/IO#")
 
   override def isLinter: Boolean       = true
