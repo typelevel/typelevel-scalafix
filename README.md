@@ -3,6 +3,8 @@
 [![Continuous Integration](https://github.com/typelevel/typelevel-scalafix/actions/workflows/ci.yml/badge.svg)](https://github.com/typelevel/typelevel-scalafix/actions/workflows/ci.yml)
 [![License](https://img.shields.io/github/license/typelevel/typelevel-scalafix.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Discord](https://img.shields.io/discord/632277896739946517.svg?label=&logo=discord&logoColor=ffffff&color=404244&labelColor=6A7EC2)](https://discord.gg/D7wY3aH7BQ)
+![Maven Central](https://img.shields.io/maven-central/v/org.typelevel/typelevel-scalafix-cats_2.13)
+![Sonatype Nexus (Snapshots)](https://img.shields.io/nexus/s/org.typelevel/typelevel-scalafix-cats_2.13?server=https%3A%2F%2Fs01.oss.sonatype.org)
 
 This is a set of Scalafix rules to provide automated rewrites and linting for code which makes use of [Typelevel](https://github.com/typelevel) libraries.
 
@@ -14,9 +16,9 @@ Then you can add the *typelevel-scalafix* rules to your sbt project using the `s
 
 ```scala
 // For cats Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.0-SNAPSHOT"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.0"
 // For cats-effect Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.0-SNAPSHOT"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.0"
 ```
 
 ## Usage
