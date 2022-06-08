@@ -16,9 +16,9 @@ Then you can add the *typelevel-scalafix* rules to your sbt project using the `s
 
 ```scala
 // For cats Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.1"
 // For cats-effect Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.1"
 ```
 
 ## Usage
