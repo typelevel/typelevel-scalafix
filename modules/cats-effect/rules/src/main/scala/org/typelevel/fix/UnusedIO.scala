@@ -20,7 +20,8 @@ import scalafix.v1._
 import scala.meta._
 
 class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
-  val IOSym = SymbolMatcher.exact("cats/effect/IO#")
+  val IOSym          = SymbolMatcher.exact("cats/effect/IO#")
+  val IOCompanionSym = SymbolMatcher.exact("cats/effect/IO.")
 
   override def isLinter: Boolean       = true
   override def isRewrite: Boolean      = false
@@ -50,6 +51,8 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
           checkSignature(outer, ref)
         case Term.ApplyInfix(_, op, _, _) =>
           checkSignature(outer, op)
+        case Term.Apply(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
+          Patch.lint(UnusedIODiagnostic(outer))
         case Term.Apply(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
         case Term.Select(_, prop @ Term.Name(_)) =>
