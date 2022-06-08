@@ -240,6 +240,9 @@ object UnusedIOTests {
       _ = IO { println("hello") } /* assert: TypelevelUnusedIO.unusedIO
           ^^^^^^^^^^^^^^^^^^^^^^^
           This IO expression is not used. */
+      _ = IO({ println("hello") }) /* assert: TypelevelUnusedIO.unusedIO
+          ^^^^^^^^^^^^^^^^^^^^^^^^
+          This IO expression is not used. */
     } yield ()
   }
 
