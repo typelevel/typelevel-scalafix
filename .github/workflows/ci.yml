@@ -85,11 +85,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: mkdir -p modules/cats/output/target target/cats-effect-aggregate/target modules/cats/tests/target modules/cats-effect/tests/target modules/cats-effect/rules/target target modules/cats-effect/input/target modules/cats/rules/target modules/cats-effect/output/target target/cats-aggregate/target modules/cats/input/target project/target
+        run: mkdir -p modules/cats/output/target target/cats-effect-aggregate/target modules/cats/tests/target modules/cats-effect/tests/target target/rules-aggregate/target modules/cats-effect/rules/target target modules/cats-effect/input/target modules/cats/rules/target modules/cats-effect/output/target target/cats-aggregate/target modules/cats/input/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: tar cf targets.tar modules/cats/output/target target/cats-effect-aggregate/target modules/cats/tests/target modules/cats-effect/tests/target modules/cats-effect/rules/target target modules/cats-effect/input/target modules/cats/rules/target modules/cats-effect/output/target target/cats-aggregate/target modules/cats/input/target project/target
+        run: tar cf targets.tar modules/cats/output/target target/cats-effect-aggregate/target modules/cats/tests/target modules/cats-effect/tests/target target/rules-aggregate/target modules/cats-effect/rules/target target modules/cats-effect/input/target modules/cats/rules/target modules/cats-effect/output/target target/cats-aggregate/target modules/cats/input/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
