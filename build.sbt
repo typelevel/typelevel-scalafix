@@ -18,8 +18,16 @@ ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaV
 
 lazy val `typelevel-scalafix` = project
   .in(file("."))
-  .aggregate(cats, catsEffect)
+  .aggregate(`typelevel-scalafix-rules`, cats, catsEffect)
   .enablePlugins(NoPublishPlugin)
+
+lazy val `typelevel-scalafix-rules` = project
+  .in(file("target/rules-aggregate"))
+  .dependsOn(catsRules, catsEffectRules)
+  .settings(
+    moduleName := "typelevel-scalafix",
+    tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.2").toMap
+  )
 
 // typelevel/cats Scalafix rules
 lazy val cats =
