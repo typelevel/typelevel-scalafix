@@ -24,7 +24,10 @@ lazy val `typelevel-scalafix` = project
 lazy val `typelevel-scalafix-rules` = project
   .in(file("target/rules-aggregate"))
   .dependsOn(catsRules, catsEffectRules)
-  .settings(moduleName := "typelevel-scalafix")
+  .settings(
+    moduleName := "typelevel-scalafix",
+    tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.2").toMap
+  )
 
 // typelevel/cats Scalafix rules
 lazy val cats =
