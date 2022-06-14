@@ -32,6 +32,7 @@ Once enabled, you can configure the rules that will run when you use the `scalaf
 rules = [
   TypelevelUnusedIO
   TypelevelMapSequence
+  TypelevelUnusedShowInterpolator
 ]
 ```
 
@@ -52,6 +53,18 @@ This rule detects call sequences like `.map(f).sequence` and `.map(f).sequence_`
 NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .map(f).sequence can be replaced by .traverse(f) */
+```
+
+### TypelevelUnusedShowInterpolator
+
+This rule detects usages of the cats `show` interpolator that do not interpolate any variables.
+
+**Examples**
+
+```scala
+val foo = show"bar" /* assert: TypelevelUnusedShowInterpolator.unusedShowInterpolator
+          ^^^^^^^^^
+          This show interpolator contains no interpolated variables. */
 ```
 
 ## Rules for cats-effect

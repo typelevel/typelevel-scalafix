@@ -26,7 +26,9 @@ lazy val `typelevel-scalafix-rules` = project
   .dependsOn(catsRules, catsEffectRules)
   .settings(
     moduleName := "typelevel-scalafix",
-    tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.2").toMap
+    tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.2").toMap,
+    // TODO: Should be removed if/when https://github.com/lightbend/mima/issues/702 is fixed
+    mimaPreviousArtifacts := Set.empty
   )
 
 // typelevel/cats Scalafix rules
