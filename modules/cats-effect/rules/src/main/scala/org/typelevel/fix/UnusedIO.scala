@@ -87,7 +87,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
     case Term.While(_, body) =>
       checkDiscardedStat(body)
     case Term.Block(stats) =>
-      stats.init.map(checkDiscardedStat).asPatch
+      stats.dropRight(1).map(checkDiscardedStat).asPatch
     case Term.Interpolate(_, _, args) =>
       args.map(checkDiscardedStat).asPatch
     case Term.Try(_, _, Some(finalizer)) =>
