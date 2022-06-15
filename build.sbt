@@ -50,6 +50,7 @@ lazy val catsEffect = scalafixProject("cats-effect")
 // typelevel/fs2 Scalafix rules
 lazy val fs2 = scalafixProject("fs2")
   .inputSettings(
+    semanticdbOptions += "-P:semanticdb:synthetics:on",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core"   % CatsVersion,
       "org.typelevel" %% "cats-effect" % CatsEffectVersion,
