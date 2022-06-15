@@ -246,6 +246,15 @@ object UnusedIOTests {
     } yield ()
   }
 
+  def unusedEmptyIO = {
+    for {
+      a <- IO.pure(42L)
+      _ = IO {} /* assert: TypelevelUnusedIO.unusedIO
+          ^^^^^
+          This IO expression is not used. */
+    } yield ()
+  }
+
   // TODO: Implement checks using inferred type information
   // This is tricky to do because the inferred types in the
   // call to `.value` are bound in the previous expression.
