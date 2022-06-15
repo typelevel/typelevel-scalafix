@@ -7,7 +7,7 @@ import ScalafixPlugin.autoImport._
 import ScalafixTestkitPlugin.autoImport._
 import TypelevelSettingsPlugin.autoImport._
 
-object TypelevelScalafixPlugin extends AutoPlugin {
+object ScalafixProjectPlugin extends AutoPlugin {
   object autoImport {
     lazy val V                        = _root_.scalafix.sbt.BuildInfo
     def scalafixProject(name: String) = ScalafixProject(name)
