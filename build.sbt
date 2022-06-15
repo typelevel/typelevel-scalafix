@@ -53,6 +53,6 @@ lazy val fs2 = scalafixProject("fs2")
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core"   % CatsVersion,
       "org.typelevel" %% "cats-effect" % CatsEffectVersion,
-      "org.typelevel" %% "fs2-core"    % Fs2Version
+      "co.fs2"        %% "fs2-core"    % Fs2Version
     )
   )
