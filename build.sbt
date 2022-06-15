@@ -5,6 +5,7 @@ ThisBuild / scalaVersion       := (ThisBuild / crossScalaVersions).value.head
 
 lazy val CatsVersion       = "2.7.0"
 lazy val CatsEffectVersion = "3.3.11"
+lazy val Fs2Version        = "3.2.8"
 
 ThisBuild / developers ++= List(
   tlGitHubDev("DavidGregory084", "David Gregory")
@@ -16,12 +17,12 @@ ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaV
 
 lazy val `typelevel-scalafix` = project
   .in(file("."))
-  .aggregate(`typelevel-scalafix-rules`, cats.all, catsEffect.all)
+  .aggregate(`typelevel-scalafix-rules`, cats.all, catsEffect.all, fs2.all)
   .enablePlugins(NoPublishPlugin)
 
 lazy val `typelevel-scalafix-rules` = project
   .in(file("target/rules-aggregate"))
-  .dependsOn(cats.rules, catsEffect.rules)
+  .dependsOn(cats.rules, catsEffect.rules, fs2.rules)
   .settings(
     moduleName := "typelevel-scalafix",
     tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.2").toMap,
@@ -43,5 +44,15 @@ lazy val catsEffect = scalafixProject("cats-effect")
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core"   % CatsVersion,
       "org.typelevel" %% "cats-effect" % CatsEffectVersion
+    )
+  )
+
+// typelevel/fs2 Scalafix rules
+lazy val fs2 = scalafixProject("fs2")
+  .inputSettings(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core"   % CatsVersion,
+      "org.typelevel" %% "cats-effect" % CatsEffectVersion,
+      "org.typelevel" %% "fs2-core"    % Fs2Version
     )
   )
