@@ -20,7 +20,7 @@ import scalafix.v1._
 
 import scala.meta._
 
-class SyncCompiler extends SemanticRule("TypelevelSyncCompiler") {
+class SyncCompiler extends SemanticRule("TypelevelFs2SyncCompiler") {
   override def fix(implicit doc: SemanticDocument): Patch =
     doc.tree.collect { case Stream_compile_M(t @ Term.Select(_, _)) =>
       t.synthetics.collect { case ApplyTree(_, List(ApplyTree(_, List(target)))) =>

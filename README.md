@@ -35,7 +35,7 @@ rules = [
   TypelevelUnusedIO
   TypelevelMapSequence
   TypelevelUnusedShowInterpolator
-  TypelevelSyncCompiler
+  TypelevelFs2SyncCompiler
 ]
 ```
 
@@ -116,7 +116,7 @@ IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
 
 ## Rules for fs2
 
-### TypelevelSyncCompiler
+### TypelevelFs2SyncCompiler
 
 This rule detects usages of the fs2 `Sync` compiler which can have surprising semantics with regard to (lack of) interruption (e.g., [typelevel/fs2#2371](https://github.com/typelevel/fs2/issues/2371)).
 
