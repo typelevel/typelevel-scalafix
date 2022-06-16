@@ -21,6 +21,8 @@ ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.4"
 // To add only cats-effect Scalafix rules
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.4"
+// To add only fs2 Scalafix rules
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.1.4"
 ```
 
 ## Usage
@@ -33,6 +35,7 @@ rules = [
   TypelevelUnusedIO
   TypelevelMapSequence
   TypelevelUnusedShowInterpolator
+  TypelevelFs2SyncCompiler
 ]
 ```
 
@@ -109,6 +112,22 @@ EitherT(IO.println("foo").attempt).value
 
 // .attemptNarrow is provided as a `cats.ApplicativeError` extension method
 IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
+```
+
+## Rules for fs2
+
+### TypelevelFs2SyncCompiler
+
+This rule detects usages of the fs2 `Sync` compiler which can have surprising semantics with regard to (lack of) interruption (e.g., [typelevel/fs2#2371](https://github.com/typelevel/fs2/issues/2371)).
+
+**Examples**
+
+```scala
+def countChunks[F[_]: Sync, A](stream: Stream[F, A]): F[Long] =
+  stream.chunks.as(1L).compile.foldMonoid /*
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  FS2's Sync compiler should be avoided due to its surprising semantics.
+  Usually this means a Sync constraint needs to be changed to Concurrent or upgraded to Async. */
 ```
 
 ## Conduct
