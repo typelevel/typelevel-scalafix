@@ -4,7 +4,7 @@ ThisBuild / crossScalaVersions := Seq(V.scala213, V.scala212)
 ThisBuild / scalaVersion       := (ThisBuild / crossScalaVersions).value.head
 
 lazy val CatsVersion       = "2.8.0"
-lazy val CatsEffectVersion = "3.3.11"
+lazy val CatsEffectVersion = "3.3.12"
 lazy val Fs2Version        = "3.2.8"
 
 ThisBuild / developers ++= List(
