@@ -130,6 +130,12 @@ def countChunks[F[_]: Sync, A](stream: Stream[F, A]): F[Long] =
   Usually this means a Sync constraint needs to be changed to Concurrent or upgraded to Async. */
 ```
 
+## Rules for http4s
+
+### TypelevelHttp4sLiteralsSyntax
+
+This rule rewrites uses of `Uri.unsafeFromString("...")` and friends with `uri"..."`.
+
 ## Conduct
 
 Participants are expected to follow the [Scala Code of Conduct](https://www.scala-lang.org/conduct/) while discussing the project on GitHub and any other venues associated with the project.
