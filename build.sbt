@@ -68,7 +68,6 @@ lazy val http4s = scalafixProject("http4s")
     tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.5").toMap
   )
   .inputSettings(
-    // semanticdbOptions += "-P:semanticdb:synthetics:on",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-core" % Http4sVersion
     )
