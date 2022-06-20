@@ -37,6 +37,11 @@ lazy val cats = scalafixProject("cats")
       "org.typelevel" %% "cats-core" % CatsVersion
     )
   )
+  .outputSettings(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % CatsVersion
+    )
+  )
 
 // typelevel/cats-effect Scalafix rules
 lazy val catsEffect = scalafixProject("cats-effect")
