@@ -33,7 +33,6 @@ class Http4sLiteralsSyntax extends SemanticRule("TypelevelHttp4sLiteralsSyntax")
             List(lit @ Lit.String(_))
           ) =>
         Patch.replaceTree(t, s"path$lit") + importLiteralsIfNeeded
-      case t if t.syntax == """Uri.Path.unsafeFromString("foo/bar")""" => show(t)
     }.asPatch
 
   val Uri_unsafeFromString_M  = SymbolMatcher.exact("org/http4s/Uri.unsafeFromString().")
@@ -66,13 +65,4 @@ class Http4sLiteralsSyntax extends SemanticRule("TypelevelHttp4sLiteralsSyntax")
       case _ => false
     }
     .contains(true)
-
-  def show(tree: Tree)(implicit doc: SemanticDocument): Patch = {
-    println("Tree.syntax: " + tree.syntax)
-    println("Tree.structure: " + tree.structure)
-    println("Tree.structureLabeled: " + tree.structureLabeled)
-    println("Tree.symbol: " + tree.symbol)
-    println()
-    Patch.empty
-  }
 }
