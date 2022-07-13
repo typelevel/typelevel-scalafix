@@ -24,8 +24,8 @@ class As extends SemanticRule("As") {
     doc.tree.collect {
       // fa.map(_ => ())
       case tree @ AnonymousMap(Lit.Unit()) => Patch.lint(VoidDiagnostic(tree))
-      // fa.map(_ => f)
-      case tree @ AnonymousMap(_) => Patch.lint(AsDiagnostic(tree))
+      // fa.map(_ => 1)
+      case tree @ AnonymousMap(_: Lit) => Patch.lint(AsDiagnostic(tree))
     }.asPatch
 
 }
