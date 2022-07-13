@@ -19,7 +19,7 @@ package org.typelevel.fix
 import scalafix.v1._
 import scala.meta._
 
-class As extends SemanticRule("As") {
+class As extends SemanticRule("TypelevelAs") {
   override def fix(implicit doc: SemanticDocument): Patch =
     doc.tree.collect {
       // fa.map(_ => ())
