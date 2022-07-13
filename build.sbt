@@ -5,7 +5,7 @@ ThisBuild / scalaVersion       := (ThisBuild / crossScalaVersions).value.head
 
 lazy val CatsVersion       = "2.8.0"
 lazy val CatsEffectVersion = "3.3.14"
-lazy val Fs2Version        = "3.2.9"
+lazy val Fs2Version        = "3.2.10"
 lazy val Http4sVersion     = "0.23.13"
 
 ThisBuild / developers ++= List(
