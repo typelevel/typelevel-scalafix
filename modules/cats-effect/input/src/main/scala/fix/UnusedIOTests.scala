@@ -12,6 +12,13 @@ import java.util.concurrent.TimeoutException
 import scala.concurrent.duration._
 
 object UnusedIOTests {
+  def usedAssign = {
+
+    { val x = 1 }
+    {}
+
+  }
+
   def unusedIOCompanion = {
     IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^^^^^^^^^^^^^
