@@ -1,2 +1,3 @@
 org.typelevel.fix.MapSequence
 org.typelevel.fix.UnusedShowInterpolator
+org.typelevel.fix.As
