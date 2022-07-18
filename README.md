@@ -23,6 +23,8 @@ ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats"
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.5"
 // To add only fs2 Scalafix rules
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.1.5"
+// To add only http4s Scalafix rules
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-http4s" % "0.1.5"
 ```
 
 ## Usage
