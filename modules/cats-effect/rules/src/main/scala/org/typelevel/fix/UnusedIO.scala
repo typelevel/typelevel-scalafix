@@ -95,7 +95,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
     checkInner(outer)
   }
 
-  def checkDiscardOpportunity(tree: Tree)(implicit
+  def checkTree(tree: Tree)(implicit
     doc: SemanticDocument
   ): Patch = tree.collect {
     case Term.For(_, body) =>
@@ -121,7 +121,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
   }.asPatch
 
   override def fix(implicit doc: SemanticDocument): Patch =
-    checkDiscardOpportunity(doc.tree)
+    checkTree(doc.tree)
 }
 
 final case class UnusedIODiagnostic(t: Tree) extends Diagnostic {
