@@ -55,17 +55,33 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
           Patch.lint(UnusedIODiagnostic(outer))
         case Term.Apply(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
+        case Term.ApplyUnary(fn @ Term.Name(_), _) =>
+          checkSignature(outer, fn)
+        case Term.ApplyUsing(fn @ Term.Name(_), _) =>
+          checkSignature(outer, fn)
         case Term.Select(_, prop @ Term.Name(_)) =>
           checkSignature(outer, prop)
         case Term.Apply(Term.Select(_, method), _) =>
           checkSignature(outer, method)
+        case Term.Annotate(expr, _) =>
+          checkInner(expr)
+        case Term.Ascribe(expr, _) =>
+          checkInner(expr)
+        case Term.Tuple(args) =>
+          args.map(arg => checkSignature(arg, arg)).asPatch
+        case Term.Try(expr, catchCases, _) =>
+          checkInner(expr) ++ catchCases.map { case Case(_, _, consequent) =>
+            checkInner(consequent)
+          }
+        case Term.TryWithHandler(expr, catchCase, _) =>
+          checkInner(expr) + checkInner(catchCase)
         case Term.Match(_, cases) =>
-          cases.map {
+          cases.collect {
             case cse if self.isDefinedAt(cse.body) =>
               checkInner(cse.body)
           }.asPatch
         case Term.Block(stats) =>
-          stats.map {
+          stats.collect {
             case stat if self.isDefinedAt(stat) =>
               checkInner(stat)
           }.asPatch
@@ -79,7 +95,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
     checkInner(outer)
   }
 
-  def checkTree(tree: Tree)(implicit
+  def checkDiscardOpportunity(tree: Tree)(implicit
     doc: SemanticDocument
   ): Patch = tree.collect {
     case Term.For(_, body) =>
@@ -105,7 +121,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
   }.asPatch
 
   override def fix(implicit doc: SemanticDocument): Patch =
-    checkTree(doc.tree)
+    checkDiscardOpportunity(doc.tree)
 }
 
 final case class UnusedIODiagnostic(t: Tree) extends Diagnostic {
