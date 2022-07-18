@@ -15,14 +15,16 @@ Then you can add the *typelevel-scalafix* rules to your sbt project using the `s
 
 ```scala
 // To add all Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.1.4"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.1.5"
 
 // To add only cats Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.4"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.1.5"
 // To add only cats-effect Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.4"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.1.5"
 // To add only fs2 Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.1.4"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.1.5"
+// To add only http4s Scalafix rules
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-http4s" % "0.1.5"
 ```
 
 ## Usage
@@ -34,8 +36,10 @@ Once enabled, you can configure the rules that will run when you use the `scalaf
 rules = [
   TypelevelUnusedIO
   TypelevelMapSequence
+  TypelevelAs
   TypelevelUnusedShowInterpolator
   TypelevelFs2SyncCompiler
+  TypelevelHttp4sLiteralsSyntax
 ]
 ```
 
@@ -57,6 +61,26 @@ NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .map(f).sequence can be replaced by .traverse(f) */
 ```
+
+### TypelevelAs
+
+This rule detects call sequences like `.map(_ => ())` and `.map(_ => <some literal>)`, since they can be replaced by `.void` and `.as(<some literal>)` respectively.
+
+**Examples**
+
+```scala
+List(1, 2, 3).map(_ => ()) /* assert: TypelevelAs.as
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.map(_ => ()) can be replaced by .void */
+```
+
+**Limitations**
+
+At the moment this rule is only applied to applications of `map` where the argument function returns a literal value.
+
+This is because it's not clear whether any given variable in a Scala program has been evaluated yet.
+
+For example, in the expression `.map(_ => someVariable)`, if `someVariable` is a `lazy val` refactoring to use `.as` could change the behaviour of the program, since `as` evaluates its argument strictly.
 
 ### TypelevelUnusedShowInterpolator
 
@@ -129,6 +153,12 @@ def countChunks[F[_]: Sync, A](stream: Stream[F, A]): F[Long] =
   FS2's Sync compiler should be avoided due to its surprising semantics.
   Usually this means a Sync constraint needs to be changed to Concurrent or upgraded to Async. */
 ```
+
+## Rules for http4s
+
+### TypelevelHttp4sLiteralsSyntax
+
+This rule rewrites uses of `Uri.unsafeFromString("...")` and friends with `uri"..."`.
 
 ## Conduct
 
