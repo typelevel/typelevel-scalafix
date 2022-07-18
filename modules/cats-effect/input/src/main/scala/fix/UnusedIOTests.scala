@@ -10,8 +10,22 @@ import cats.effect.unsafe.implicits.global
 import cats.syntax.all._
 import java.util.concurrent.TimeoutException
 import scala.concurrent.duration._
+import scala.annotation.nowarn
+import scala.util.control.NonFatal
 
 object UnusedIOTests {
+  def ignoreDiscardedAssign = {
+    { val x = 1 }
+
+    ()
+  }
+
+  def ignoreDiscardedThrow = {
+    { throw new IllegalArgumentException }
+
+    ()
+  }
+
   def unusedIOCompanion = {
     IO.println("foo") /* assert: TypelevelUnusedIO.unusedIO
     ^^^^^^^^^^^^^^^^^
@@ -246,6 +260,14 @@ object UnusedIOTests {
     } yield ()
   }
 
+  def unusedIOApplyUnary = {
+    !IO(true) /* assert: TypelevelUnusedIO.unusedIO
+    ^^^^^^^^^
+    This IO expression is not used. */
+
+    IO.println("foo")
+  }
+
   def unusedEmptyIO = {
     for {
       a <- IO.pure(42L)
@@ -253,6 +275,57 @@ object UnusedIOTests {
           ^^^^^
           This IO expression is not used. */
     } yield ()
+  }
+
+  def unusedAnnotatedIO = {
+    (IO.println("foo"): @nowarn) /* assert: TypelevelUnusedIO.unusedIO
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    This IO expression is not used. */
+
+    IO.println("bar")
+  }
+
+  def unusedAscribedIO = {
+    (IO.println("foo"): IO[Unit]) /* assert: TypelevelUnusedIO.unusedIO
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    This IO expression is not used. */
+
+    IO.println("bar")
+  }
+
+  def unusedTupleIO = {
+    (IO.println("foo"), 1) /* assert: TypelevelUnusedIO.unusedIO
+     ^^^^^^^^^^^^^^^^^
+     This IO expression is not used. */
+
+    IO.println("bar")
+  }
+
+  def unusedTryIO = {
+    try { /* assert: TypelevelUnusedIO.unusedIO
+    ^
+    This IO expression is not used. */
+      IO.println("foo")
+    } catch {
+      case NonFatal(_) =>
+        IO.println("bar")
+    }
+
+    IO.println("baz")
+  }
+
+  def unusedTryWithHandlerIO = {
+    val handler: PartialFunction[Throwable, IO[Unit]] = { case NonFatal(_) =>
+      IO.println("bar")
+    }
+
+    try { /* assert: TypelevelUnusedIO.unusedIO
+    ^
+    This IO expression is not used. */
+      IO.println("foo")
+    } catch handler
+
+    IO.println("baz")
   }
 
   // TODO: Implement checks using inferred type information
@@ -271,5 +344,9 @@ object UnusedIOTests {
     IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
 
     IO.println("bar")
+  }
+
+  implicit class IOUnaryOps[A](action: IO[Boolean]) {
+    def unary_! : IO[Boolean] = action.map(!_)
   }
 }
