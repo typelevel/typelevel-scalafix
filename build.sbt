@@ -34,6 +34,7 @@ lazy val `typelevel-scalafix-rules` = project
 // typelevel/cats Scalafix rules
 lazy val cats = scalafixProject("cats")
   .inputSettings(
+    semanticdbOptions += "-P:semanticdb:synthetics:on",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % CatsVersion
     )

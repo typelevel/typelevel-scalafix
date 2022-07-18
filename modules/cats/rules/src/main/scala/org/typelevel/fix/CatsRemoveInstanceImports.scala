@@ -16,35 +16,34 @@
 
 package org.typelevel.fix
 
-import scalafix.v0._
-import scalafix.syntax._
+import scalafix.v1._
 import scala.meta._
-import scala.meta.contrib._
 
 // ref: https://github.com/typelevel/cats/issues/3563
-case class CatsRemoveInstanceImports(index: SemanticdbIndex)
-  extends SemanticRule(index, "TypelevelCatsRemoveInstanceImports") {
+class CatsRemoveInstanceImports extends SemanticRule("TypelevelCatsRemoveInstanceImports") {
 
-  override def fix(ctx: RuleCtx): Patch = ctx.tree.collect {
+  override def fix(implicit doc: SemanticDocument): Patch = doc.tree.collect {
     // e.g. "import cats.instances.int._" or "import cats.instances.all._"
-    case i @ Import(Importer(Select(Select(Name("cats"), Name("instances")), _), _) :: _) =>
-      removeImportLine(ctx)(i)
+    case i @ Import(
+          Importer(Term.Select(Term.Select(Name("cats"), Name("instances")), _), _) :: _
+        ) =>
+      removeImportLine(doc)(i)
 
     // "import cats.implicits._"
-    case i @ Import(Importer(Select(Name("cats"), Name("implicits")), _) :: _) =>
-      val boundary = findLexicalBoundary(i)
+    case i @ Import(Importer(Term.Select(Name("cats"), Name("implicits")), _) :: _) =>
+      // val boundary = findLexicalBoundary(i)
 
-      // Find all synthetics between the import statement and the end of the lexical boundary
-      val lexicalStart = i.pos.end
-      val lexicalEnd   = boundary.pos.end
+      // // Find all synthetics between the import statement and the end of the lexical boundary
+      // val lexicalStart = i.pos.end
+      // val lexicalEnd   = boundary.pos.end
       try {
-        val relevantSynthetics =
-          ctx.index.synthetics.filter(x =>
-            x.position.start >= lexicalStart && x.position.end <= lexicalEnd
-          )
+        // val relevantSynthetics =
+        //       doc.synthetics.filter(x =>
+        //         x.symbol.flatMap(_.info).map(_.)
+        //       )
 
-        val usesImplicitConversion = relevantSynthetics.exists(containsImplicitConversion)
-        val usesSyntax             = relevantSynthetics.exists(containsCatsSyntax)
+        val usesImplicitConversion = doc.synthetics.exists(containsImplicitConversion)
+        val usesSyntax             = doc.synthetics.exists(containsCatsSyntax)
 
         if (usesImplicitConversion) {
           // the import is used to enable an implicit conversion,
@@ -53,39 +52,56 @@ case class CatsRemoveInstanceImports(index: SemanticdbIndex)
         } else if (usesSyntax) {
           // the import is used to enable an extension method,
           // so replace it with "import cats.syntax.all._"
-          ctx.replaceTree(i, "import cats.syntax.all._")
+          Patch.replaceTree(i, "import cats.syntax.all._")
         } else {
           // the import is only used to import instances,
           // so it's safe to remove
-          removeImportLine(ctx)(i)
+          removeImportLine(doc)(i)
         }
       } catch {
         case e: scalafix.v1.MissingSymbolException =>
           // see https://github.com/typelevel/cats/pull/3566#issuecomment-684007028
           // and https://github.com/scalacenter/scalafix/issues/1123
-          println(
-            s"Skipping rewrite of 'import cats.implicits._' in file ${ctx.input.label} because we ran into a Scalafix bug. $e"
-          )
+          doc.input match {
+            case Input.File(path, _) =>
+              println(
+                s"Skipping rewrite of 'import cats.implicits._' in file ${path.syntax} because we ran into a Scalafix bug. $e"
+              )
+            case _ =>
+              println(
+                s"Skipping rewrite of 'import cats.implicits._' because we ran into a Scalafix bug. $e"
+              )
+          }
           e.printStackTrace()
           Patch.empty
       }
   }.asPatch
 
-  private def removeImportLine(ctx: RuleCtx)(i: Import): Patch =
-    ctx.removeTokens(i.tokens) + removeWhitespaceAndNewlineBefore(ctx)(i.tokens.start)
+  private def removeImportLine(doc: SemanticDocument)(i: Import): Patch =
+    Patch.removeTokens(i.tokens) + removeWhitespaceAndNewlineBefore(doc)(i.tokens.start)
 
-  private def containsImplicitConversion(synthetic: Synthetic) =
-    synthetic.names.exists(x => isCatsKernelConversion(x.symbol))
+  private def containsImplicitConversion(synthetic: SemanticTree)(implicit doc: SemanticDocument) =
+    synthetic match {
+      case ApplyTree(fn, _) =>
+        fn.symbol.map(sym => isCatsKernelConversion(sym)).getOrElse(false)
+      case _ =>
+        false
+    }
 
   private def isCatsKernelConversion(symbol: Symbol) =
-    symbol.syntax.contains("cats/kernel") && symbol.syntax.contains("Conversion")
+    symbol.value.contains("cats/kernel") && symbol.value.contains("Conversion")
 
-  private def containsCatsSyntax(synthetic: Synthetic) =
-    synthetic.names.exists(x => isCatsSyntax(x.symbol))
+  private def containsCatsSyntax(synthetic: SemanticTree)(implicit doc: SemanticDocument) =
+    synthetic match {
+      case ApplyTree(fn, _) =>
+        fn.symbol.map(isCatsSyntax).getOrElse(false)
+      case _ =>
+        false
+    }
 
   private def isCatsSyntax(symbol: Symbol) =
-    symbol.syntax
-      .contains("cats") && (symbol.syntax.contains("syntax") || symbol.syntax.contains("Ops"))
+    symbol.value
+      .contains("cats") && (symbol.value.contains("syntax") || symbol.value.contains("Ops"))
 
   private def findLexicalBoundary(t: Tree): Tree = {
     t.parent match {
@@ -96,15 +112,15 @@ case class CatsRemoveInstanceImports(index: SemanticdbIndex)
     }
   }
 
-  private def removeWhitespaceAndNewlineBefore(ctx: RuleCtx)(index: Int): Patch = {
-    val whitespaceAndNewlines = ctx.tokens
+  private def removeWhitespaceAndNewlineBefore(doc: SemanticDocument)(index: Int): Patch = {
+    val whitespaceAndNewlines = doc.tokens
       .take(index)
       .takeRightWhile(t =>
         t.is[Token.Space] ||
           t.is[Token.Tab] ||
           t.is[Token.LF]
       )
-    ctx.removeTokens(whitespaceAndNewlines)
+    Patch.removeTokens(whitespaceAndNewlines)
   }
 
 }
