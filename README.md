@@ -58,6 +58,26 @@ NonEmptyList.one(1).map(Const.apply[Int, String]).sequence /*
 .map(f).sequence can be replaced by .traverse(f) */
 ```
 
+### TypelevelAs
+
+This rule detects call sequences like `.map(_ => ())` and `.map(_ => <some literal>)`, since they can be replaced by `.void` and `.as(<some literal>)` respectively.
+
+**Examples**
+
+```scala
+List(1, 2, 3).map(_ => ()) /* assert: TypelevelAs.as
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.map(_ => ()) can be replaced by .void */
+```
+
+**Limitations**
+
+At the moment this rule is only applied to applications of `map` where the argument function returns a literal value.
+
+This is because it's not clear whether any given variable in a Scala program has been evaluated yet.
+
+For example, in the expression `.map(_ => someVariable)`, if `someVariable` is a `lazy val` refactoring to use `.as` could change the behaviour of the program, since `as` evaluates its argument strictly.
+
 ### TypelevelUnusedShowInterpolator
 
 This rule detects usages of the cats `show` interpolator that do not interpolate any variables.
