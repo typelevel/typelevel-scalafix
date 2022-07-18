@@ -315,9 +315,8 @@ object UnusedIOTests {
   }
 
   def unusedTryWithHandlerIO = {
-    val handler: PartialFunction[Throwable, IO[Unit]] = {
-      case NonFatal(_) =>
-        IO.println("bar")
+    val handler: PartialFunction[Throwable, IO[Unit]] = { case NonFatal(_) =>
+      IO.println("bar")
     }
 
     try { /* assert: TypelevelUnusedIO.unusedIO
