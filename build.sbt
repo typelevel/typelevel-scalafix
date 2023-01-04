@@ -8,6 +8,7 @@ lazy val CatsEffectVersion = "3.4.2"
 lazy val Fs2Version        = "3.4.0"
 lazy val Http4sVersion     = "0.23.16"
 
+ThisBuild / startYear := Some(2022)
 ThisBuild / developers ++= List(
   tlGitHubDev("DavidGregory084", "David Gregory")
 )
