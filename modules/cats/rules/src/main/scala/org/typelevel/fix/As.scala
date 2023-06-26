@@ -32,9 +32,9 @@ class As extends SemanticRule("TypelevelAs") {
 
 object AnonymousMap {
   def unapply(term: Term): Option[Term] = term match {
-    case Term.Apply(
+    case Term.Apply.Initial(
           Term.Select(_, Term.Name("map")),
-          Term.Function(List(Term.Param(_, Name.Anonymous(), _, _)), returnType) :: Nil
+          Term.Function.After_4_6_0(List(Term.Param(_, Name.Anonymous(), _, _)), returnType) :: Nil
         ) =>
       Some(returnType)
     case _ => None
