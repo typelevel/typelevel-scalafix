@@ -49,19 +49,19 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
       lazy val self: PartialFunction[Stat, Patch] = {
         case ref @ Term.Name(_) =>
           checkSignature(outer, ref)
-        case Term.ApplyInfix.After_4_6_0(_, op, _, _) =>
+        case Term.ApplyInfix.Initial(_, op, _, _) =>
           checkSignature(outer, op)
-        case Term.Apply.After_4_6_0(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
+        case Term.Apply.Initial(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
           Patch.lint(UnusedIODiagnostic(outer))
-        case Term.Apply.After_4_6_0(fn @ Term.Name(_), _) =>
+        case Term.Apply.Initial(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
         case Term.ApplyUnary(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
-        case Term.ApplyUsing.After_4_6_0(fn @ Term.Name(_), _) =>
+        case Term.ApplyUsing.Initial(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
         case Term.Select(_, prop @ Term.Name(_)) =>
           checkSignature(outer, prop)
-        case Term.Apply.After_4_6_0(Term.Select(_, method), _) =>
+        case Term.Apply.Initial(Term.Select(_, method), _) =>
           checkSignature(outer, method)
         case Term.Annotate(expr, _) =>
           checkInner(expr)
@@ -85,7 +85,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
             case stat if self.isDefinedAt(stat) =>
               checkInner(stat)
           }.asPatch
-        case Term.ApplyType.After_4_6_0(term, _) if self.isDefinedAt(term) =>
+        case Term.ApplyType.Initial(term, _) if self.isDefinedAt(term) =>
           checkInner(term)
       }
 
@@ -112,7 +112,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
       checkDiscardedStat(finalizer)
     case Template.Initial(_, _, _, stats) =>
       stats.map(checkDiscardedStat).asPatch
-    case Ctor.Secondary.After_4_6_0(_, _, _, _, stats) =>
+    case Ctor.Secondary.Initial(_, _, _, _, stats) =>
       stats.map(checkDiscardedStat).asPatch
     case Term.ForYield(enums, _) =>
       enums.collect { case Enumerator.Val(Pat.Wildcard(), rhs) =>
