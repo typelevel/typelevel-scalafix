@@ -27,12 +27,12 @@ class Http4sLiteralsSyntax extends SemanticRule("TypelevelHttp4sLiteralsSyntax")
             Uri_unsafeFromString_M(_),
             List(lit @ Lit.String(_))
           ) =>
-        Patch.replaceTree(t, s"uri$lit") + importLiteralsIfNeeded
+        (Patch.replaceTree(t, s"uri$lit") + importLiteralsIfNeeded).atomic
       case t @ Term.Apply(
             Path_unsafeFromString_M(_),
             List(lit @ Lit.String(_))
           ) =>
-        Patch.replaceTree(t, s"path$lit") + importLiteralsIfNeeded
+        (Patch.replaceTree(t, s"path$lit") + importLiteralsIfNeeded).atomic
     }.asPatch
 
   val Uri_unsafeFromString_M  = SymbolMatcher.exact("org/http4s/Uri.unsafeFromString().")
