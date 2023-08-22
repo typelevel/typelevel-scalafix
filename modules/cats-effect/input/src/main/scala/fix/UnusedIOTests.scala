@@ -279,7 +279,7 @@ object UnusedIOTests {
 
   def unusedAnnotatedIO = {
     (IO.println("foo"): @nowarn) /* assert: TypelevelUnusedIO.unusedIO
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^
     This IO expression is not used. */
 
     IO.println("bar")
@@ -287,7 +287,7 @@ object UnusedIOTests {
 
   def unusedAscribedIO = {
     (IO.println("foo"): IO[Unit]) /* assert: TypelevelUnusedIO.unusedIO
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
     This IO expression is not used. */
 
     IO.println("bar")
