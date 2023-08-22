@@ -3,9 +3,9 @@ ThisBuild / tlBaseVersion := "0.1"
 ThisBuild / crossScalaVersions := Seq(V.scala213, V.scala212)
 ThisBuild / scalaVersion       := (ThisBuild / crossScalaVersions).value.head
 
-lazy val CatsVersion       = "2.9.0"
+lazy val CatsVersion       = "2.10.0"
 lazy val CatsEffectVersion = "3.5.1"
-lazy val Fs2Version        = "3.7.0"
+lazy val Fs2Version        = "3.8.0"
 lazy val Http4sVersion     = "0.23.23"
 
 ThisBuild / startYear := Some(2022)
