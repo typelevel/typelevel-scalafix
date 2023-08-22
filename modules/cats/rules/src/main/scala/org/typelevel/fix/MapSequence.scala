@@ -55,7 +55,7 @@ object Sequence {
 
   def unapply(term: Term)(implicit doc: SemanticDocument): Option[(Term.Select, Term)] =
     term match {
-      case Term.Apply(
+      case Term.Apply.Initial(
             select @ Term.Select(_, seq @ Term.Name("sequence")),
             List(receiver)
           ) if SequenceSym.matches(seq) =>
@@ -69,7 +69,7 @@ object Sequence_ {
 
   def unapply(term: Term)(implicit doc: SemanticDocument): Option[(Term.Select, Term)] =
     term match {
-      case Term.Apply(
+      case Term.Apply.Initial(
             select @ Term.Select(_, seq @ Term.Name("sequence_")),
             List(receiver)
           ) if SequenceSym.matches(seq) =>
@@ -82,8 +82,8 @@ object Map {
   val MapSym = SymbolMatcher.exact("cats/Applicative#map().")
 
   def unapply(term: Term)(implicit doc: SemanticDocument): Option[Term.Select] = term match {
-    case Term.Apply(
-          Term.Apply(
+    case Term.Apply.After_4_6_0(
+          Term.Apply.After_4_6_0(
             select @ Term.Select(_, map @ Term.Name("map")),
             _
           ),
@@ -124,7 +124,7 @@ object DotSequence_ {
 
 object DotMap {
   def unapply(term: Term): Option[Term.Select] = term match {
-    case Term.Apply(select @ Term.Select(_, Term.Name("map")), _) =>
+    case Term.Apply.After_4_6_0(select @ Term.Select(_, Term.Name("map")), _) =>
       Some(select)
     case _ => None
   }

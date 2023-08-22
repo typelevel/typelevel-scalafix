@@ -49,19 +49,19 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
       lazy val self: PartialFunction[Stat, Patch] = {
         case ref @ Term.Name(_) =>
           checkSignature(outer, ref)
-        case Term.ApplyInfix(_, op, _, _) =>
+        case Term.ApplyInfix.Initial(_, op, _, _) =>
           checkSignature(outer, op)
-        case Term.Apply(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
+        case Term.Apply.Initial(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
           Patch.lint(UnusedIODiagnostic(outer))
-        case Term.Apply(fn @ Term.Name(_), _) =>
+        case Term.Apply.Initial(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
         case Term.ApplyUnary(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
-        case Term.ApplyUsing(fn @ Term.Name(_), _) =>
+        case Term.ApplyUsing.Initial(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
         case Term.Select(_, prop @ Term.Name(_)) =>
           checkSignature(outer, prop)
-        case Term.Apply(Term.Select(_, method), _) =>
+        case Term.Apply.Initial(Term.Select(_, method), _) =>
           checkSignature(outer, method)
         case Term.Annotate(expr, _) =>
           checkInner(expr)
@@ -75,7 +75,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
           }
         case Term.TryWithHandler(expr, catchCase, _) =>
           checkInner(expr) + checkInner(catchCase)
-        case Term.Match(_, cases) =>
+        case Term.Match.Initial(_, cases) =>
           cases.collect {
             case cse if self.isDefinedAt(cse.body) =>
               checkInner(cse.body)
@@ -85,7 +85,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
             case stat if self.isDefinedAt(stat) =>
               checkInner(stat)
           }.asPatch
-        case Term.ApplyType(term, _) if self.isDefinedAt(term) =>
+        case Term.ApplyType.Initial(term, _) if self.isDefinedAt(term) =>
           checkInner(term)
       }
 
@@ -110,9 +110,9 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
       checkDiscardedStat(finalizer)
     case Term.TryWithHandler(_, _, Some(finalizer)) =>
       checkDiscardedStat(finalizer)
-    case Template(_, _, _, stats) =>
+    case Template.Initial(_, _, _, stats) =>
       stats.map(checkDiscardedStat).asPatch
-    case Ctor.Secondary(_, _, _, _, stats) =>
+    case Ctor.Secondary.Initial(_, _, _, _, stats) =>
       stats.map(checkDiscardedStat).asPatch
     case Term.ForYield(enums, _) =>
       enums.collect { case Enumerator.Val(Pat.Wildcard(), rhs) =>
