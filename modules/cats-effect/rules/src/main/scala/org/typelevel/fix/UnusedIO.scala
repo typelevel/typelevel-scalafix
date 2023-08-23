@@ -70,7 +70,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
         case Term.Tuple(args) =>
           args.map(arg => checkSignature(arg, arg)).asPatch
         case Term.Try(expr, catchCases, _) =>
-          checkInner(expr) ++ catchCases.map { case Case(_, _, consequent) =>
+          checkInner(expr) ++ catchCases.collect { case Case(_, _, consequent) =>
             checkInner(consequent)
           }
         case Term.TryWithHandler(expr, catchCase, _) =>
