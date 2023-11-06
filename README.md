@@ -48,6 +48,19 @@ rules = [
 > scalafix TypelevelUnusedIO
 ```
 
+### Scala compatibility
+
+Not all rules function with Scala 3 yet.
+
+| Rule                            | 2.13.x             | 3.x                |
+|---------------------------------|--------------------|--------------------|
+| TypelevelUnusedIO               | :white_check_mark: | :x:                |
+| TypelevelMapSequence            | :white_check_mark: | :white_check_mark: |
+| TypelevelAs                     | :white_check_mark: | :white_check_mark: |
+| TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
+| TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
+| TypelevelHttp4sLiteralsSyntax   | :white_check_mark: | :white_check_mark: |
+
 ## Rules for cats
 
 ### TypelevelMapSequence
@@ -143,6 +156,12 @@ IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
 ### TypelevelFs2SyncCompiler
 
 This rule detects usages of the fs2 `Sync` compiler which can have surprising semantics with regard to (lack of) interruption (e.g., [typelevel/fs2#2371](https://github.com/typelevel/fs2/issues/2371)).
+
+To use this rule, you'll need to enable synthetics by adding the following to your `build.sbt`:
+```scala
+ThisBuild / semanticdbOptions += "-P:semanticdb:synthetics:on"
+```
+
 
 **Examples**
 
