@@ -157,6 +157,12 @@ IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
 
 This rule detects usages of the fs2 `Sync` compiler which can have surprising semantics with regard to (lack of) interruption (e.g., [typelevel/fs2#2371](https://github.com/typelevel/fs2/issues/2371)).
 
+To use this rule, you'll need to enable synthetics by adding the following to your `build.sbt`:
+```scala
+ThisBuild / semanticdbOptions += "-P:semanticdb:synthetics:on"
+```
+
+
 **Examples**
 
 ```scala
