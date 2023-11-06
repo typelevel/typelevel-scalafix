@@ -48,6 +48,19 @@ rules = [
 > scalafix TypelevelUnusedIO
 ```
 
+### Scala compatibility
+
+Not all rules function with Scala 3 yet.
+
+| Rule                            | 2.13.x             | 3.x                |
+|---------------------------------|--------------------|--------------------|
+| TypelevelUnusedIO               | :white_check_mark: | :x:                |
+| TypelevelMapSequence            | :white_check_mark: | :white_check_mark: |
+| TypelevelAs                     | :white_check_mark: | :white_check_mark: |
+| TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
+| TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
+| TypelevelHttp4sLiteralsSyntax   | :white_check_mark: | :white_check_mark: |
+
 ## Rules for cats
 
 ### TypelevelMapSequence
