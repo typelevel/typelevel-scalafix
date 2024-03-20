@@ -1,2 +1,2 @@
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix"  % "0.11.1")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix"  % "0.12.0")
 addSbtPlugin("org.typelevel" % "sbt-typelevel" % "0.6.7")
