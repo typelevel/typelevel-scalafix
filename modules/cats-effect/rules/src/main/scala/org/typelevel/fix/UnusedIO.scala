@@ -82,8 +82,8 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
           }.asPatch
         case Term.Block(stats) =>
           stats.collect {
-            case stat if self.isDefinedAt(stat) =>
-              checkInner(stat)
+            case st if self.isDefinedAt(st) =>
+              checkInner(st)
           }.asPatch
         case Term.ApplyType.Initial(term, _) if self.isDefinedAt(term) =>
           checkInner(term)

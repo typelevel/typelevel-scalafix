@@ -237,7 +237,7 @@ object UnusedIOTests {
 
   def unusedStringInterpolation = {
     s"${IO.pure("foo")}" /* assert: TypelevelUnusedIO.unusedIO
-        ^^^^^^^^^^^^^^
+       ^^^^^^^^^^^^^^^^
         This IO expression is not used. */
   }
 
