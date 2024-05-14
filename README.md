@@ -40,6 +40,7 @@ rules = [
   TypelevelUnusedShowInterpolator
   TypelevelFs2SyncCompiler
   TypelevelHttp4sLiteralsSyntax
+  TypelevelIORandomUUID
 ]
 ```
 
@@ -60,6 +61,7 @@ Not all rules function with Scala 3 yet.
 | TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
 | TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
 | TypelevelHttp4sLiteralsSyntax   | :white_check_mark: | :white_check_mark: |
+| TypelevelIORandomUUID           | :white_check_mark: | :x:                |
 
 ## Rules for cats
 
@@ -150,6 +152,23 @@ EitherT(IO.println("foo").attempt).value
 // .attemptNarrow is provided as a `cats.ApplicativeError` extension method
 IO.println("foo").timeout(50.millis).attemptNarrow[TimeoutException]
 ```
+
+### TypelevelIORandomUUID
+
+This rule detects usages of UUID.randomUUID wrapped in an IO or IO.blocking call and rewrites them automatically to IO.randomUUID calls.
+
+**Examples**
+
+```scala
+val test = IO(UUID.randomUUID())
+```
+
+would be rewritten to
+```scala
+val test = IO.randomUUID
+```
+
+This rule works on variable declarations, usaged within methods as well as for comprehensions.
 
 ## Rules for fs2
 
