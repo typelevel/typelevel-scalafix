@@ -56,12 +56,12 @@ Not all rules function with Scala 3 yet.
 | Rule                            | 2.13.x             | 3.x                |
 |---------------------------------|--------------------|--------------------|
 | TypelevelUnusedIO               | :white_check_mark: | :x:                |
+| TypelevelIORandomUUID           | :white_check_mark: | :white_check_mark: |
 | TypelevelMapSequence            | :white_check_mark: | :white_check_mark: |
 | TypelevelAs                     | :white_check_mark: | :white_check_mark: |
 | TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
 | TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
 | TypelevelHttp4sLiteralsSyntax   | :white_check_mark: | :white_check_mark: |
-| TypelevelIORandomUUID           | :white_check_mark: | :x:                |
 
 ## Rules for cats
 
