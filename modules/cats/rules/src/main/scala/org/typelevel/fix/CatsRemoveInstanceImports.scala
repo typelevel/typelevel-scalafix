@@ -23,20 +23,19 @@ class CatsRemoveInstanceImports extends SemanticRule("TypelevelCatsRemoveInstanc
 
   override def fix(implicit doc: SemanticDocument): Patch = doc.tree.collect {
     // e.g. "import cats.instances.int._" or "import cats.instances.all._"
-    case i @ Import(
-          Importer(Term.Select(Term.Select(Name("cats"), Name("instances")), _), _) :: _
-        ) =>
-      removeImportLine(doc)(i)
+    case CatsInstancesImport(i) => removeImportLine(doc)(i)
 
     // "import cats.implicits._"
-    case i @ Import(Importer(Term.Select(Name("cats"), Name("implicits")), _) :: _) =>
+    case CatsImplicitsImport(i) =>
       try {
+        // These are all the sibling trees of the import
+        val siblings: List[Tree] = i.parent.fold(List.empty[Tree])(_.children).filterNot(_ == i)
 
-        def treeContainsFunctionCallMatching(f: Symbol => Boolean): Boolean =
-          i.parent.fold(false)(treeContainsFunctionApplicationSymbolMatches(f))
+        def usesImplicitConversion: Boolean =
+          siblings.exists(treeContainsFunctionApplicationSymbolMatching(catsKernelConversion))
 
-        def usesImplicitConversion = treeContainsFunctionCallMatching(catsKernelConversion)
-        def usesSyntax             = treeContainsFunctionCallMatching(catsSyntax)
+        def usesSyntax: Boolean =
+          siblings.exists(treeContainsFunctionApplicationSymbolMatching(catsSyntax))
 
         if (usesImplicitConversion) {
           // the import is used to enable an implicit conversion,
@@ -70,8 +69,9 @@ class CatsRemoveInstanceImports extends SemanticRule("TypelevelCatsRemoveInstanc
       }
   }.asPatch
 
-  // Recursively searches for a specific SemanticTree in the terms that this tree is comprised of
-  private def treeContainsFunctionApplicationSymbolMatches(
+  // Recursively searches for a function symbol matching the predicate
+  // in all the function applications among all the children of the Tree t
+  private def treeContainsFunctionApplicationSymbolMatching(
     f: Symbol => Boolean
   )(t: Tree)(implicit doc: SemanticDocument): Boolean =
     t match {
@@ -79,8 +79,8 @@ class CatsRemoveInstanceImports extends SemanticRule("TypelevelCatsRemoveInstanc
         t.synthetics.exists {
           case ApplyTree(fn, _) => fn.symbol.fold(false)(f)
           case _                => false
-        } || t.children.exists(treeContainsFunctionApplicationSymbolMatches(f))
-      case t => t.children.exists(treeContainsFunctionApplicationSymbolMatches(f))
+        } || t.children.exists(treeContainsFunctionApplicationSymbolMatching(f))
+      case t => t.children.exists(treeContainsFunctionApplicationSymbolMatching(f))
     }
 
   private def catsKernelConversion(symbol: Symbol): Boolean =
@@ -98,5 +98,22 @@ class CatsRemoveInstanceImports extends SemanticRule("TypelevelCatsRemoveInstanc
         .take(index)
         .takeRightWhile(t => t.is[Token.Space] || t.is[Token.Tab] || t.is[Token.LF])
     )
+}
 
+object CatsInstancesImport {
+  def unapply(t: Tree): Option[Import] = t match {
+    case i @ Import(
+          Importer(Term.Select(Term.Select(Name("cats"), Name("instances")), _), _) :: _
+        ) =>
+      Some(i)
+    case _ => None
+  }
+}
+
+object CatsImplicitsImport {
+  def unapply(t: Tree): Option[Import] = t match {
+    case i @ Import(Importer(Term.Select(Name("cats"), Name("implicits")), _) :: _) =>
+      Some(i)
+    case _ => None
+  }
 }
