@@ -3,7 +3,7 @@ package fix
 import cats.Semigroup
 import scala.concurrent.Future
 
-object RemoveInstanceImportsTests {
+object RemoveInstanceImportsTests1 {
   {
     Semigroup[Option[Int]].combine(Some(1), Some(2))
   }
