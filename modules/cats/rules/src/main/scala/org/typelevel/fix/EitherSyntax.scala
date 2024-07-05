@@ -33,18 +33,17 @@ class EitherSyntax extends SemanticRule("TypelevelEitherSyntax") {
         docContainsImports = true
       case expr @ Term.Apply.After_4_6_0(Term.Name("Right"), Term.ArgClause(List(Lit.Unit()), _)) =>
         if (!docContainsImports)
-          patches.addOne(
-            Patch.addGlobalImport(
-              Importer(
-                Term.Select(
-                  Term.Select(Term.Name("cats"), Term.Name("syntax")),
-                  Term.Name("either")
-                ),
-                List(Importee.Wildcard())
-              )
+          patches += Patch.addGlobalImport(
+            Importer(
+              Term.Select(
+                Term.Select(Term.Name("cats"), Term.Name("syntax")),
+                Term.Name("either")
+              ),
+              List(Importee.Wildcard())
             )
           )
-        patches.addOne(Patch.replaceTree(expr, "Either.unit"))
+
+        patches += Patch.replaceTree(expr, "Either.unit")
     }
 
     patches.asPatch
