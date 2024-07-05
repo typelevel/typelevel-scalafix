@@ -26,6 +26,8 @@ class As extends SemanticRule("TypelevelAs") {
       case tree @ AnonymousMap(Lit.Unit()) => Patch.lint(VoidDiagnostic(tree))
       // fa.map(_ => 1)
       case tree @ AnonymousMap(_: Lit) => Patch.lint(AsDiagnostic(tree))
+      // fa.as(())
+      case tree @ As(Lit.Unit()) => Patch.lint(AsUnitDiagnostic(tree))
     }.asPatch
 
 }
@@ -41,6 +43,17 @@ object AnonymousMap {
   }
 }
 
+object As {
+  def unapply(term: Term): Option[Term] = term match {
+    case Term.Apply.Initial(
+          Term.Select(_, Term.Name("as")),
+          List(value)
+        ) =>
+      Some(value)
+    case _ => None
+  }
+}
+
 final case class AsDiagnostic(t: Tree) extends Diagnostic {
   override def message: String    = ".map(_ => f) can be replaced by .as(f)"
   override def position: Position = t.pos
@@ -49,6 +62,12 @@ final case class AsDiagnostic(t: Tree) extends Diagnostic {
 
 final case class VoidDiagnostic(t: Tree) extends Diagnostic {
   override def message: String    = ".map(_ => ()) can be replaced by .void"
+  override def position: Position = t.pos
+  override def categoryID: String = "as"
+}
+
+final case class AsUnitDiagnostic(t: Tree) extends Diagnostic {
+  override def message: String    = ".as(()) can be replaced by .void"
   override def position: Position = t.pos
   override def categoryID: String = "as"
 }
