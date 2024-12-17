@@ -60,7 +60,7 @@ class IORandomUUID extends SemanticRule("TypelevelIORandomUUID") {
         checkDiscardedStat(expr)
       case Template.Initial(_, _, _, stats) =>
         stats.map(checkDiscardedStat).asPatch
-      case Term.ForYield(enums, _) =>
+      case Term.ForYield.After_4_9_9(enums, _) =>
         enums.collect {
           case Enumerator.Generator(_, rhs) =>
             checkDiscardedStat(rhs)
