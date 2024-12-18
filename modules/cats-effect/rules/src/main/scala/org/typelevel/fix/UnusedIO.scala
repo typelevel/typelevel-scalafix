@@ -69,7 +69,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
           checkInner(expr)
         case Term.Tuple(args) =>
           args.map(arg => checkSignature(arg, arg)).asPatch
-        case Term.Try(expr, catchCases, _) =>
+        case Term.Try.After_4_9_9(expr, catchCases, _) =>
           checkInner(expr) ++ catchCases.collect { case Case(_, _, consequent) =>
             checkInner(consequent)
           }
@@ -98,7 +98,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
   def checkTree(tree: Tree)(implicit
     doc: SemanticDocument
   ): Patch = tree.collect {
-    case Term.For(_, body) =>
+    case Term.For.After_4_9_9(_, body) =>
       checkDiscardedStat(body)
     case Term.While(_, body) =>
       checkDiscardedStat(body)
@@ -106,7 +106,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
       stats.dropRight(1).map(checkDiscardedStat).asPatch
     case Term.Interpolate(_, _, args) =>
       args.map(checkDiscardedStat).asPatch
-    case Term.Try(_, _, Some(finalizer)) =>
+    case Term.Try.After_4_9_9(_, _, Some(finalizer)) =>
       checkDiscardedStat(finalizer)
     case Term.TryWithHandler(_, _, Some(finalizer)) =>
       checkDiscardedStat(finalizer)
@@ -114,7 +114,7 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
       stats.map(checkDiscardedStat).asPatch
     case Ctor.Secondary.Initial(_, _, _, _, stats) =>
       stats.map(checkDiscardedStat).asPatch
-    case Term.ForYield(enums, _) =>
+    case Term.ForYield.After_4_9_9(enums, _) =>
       enums.collect { case Enumerator.Val(Pat.Wildcard(), rhs) =>
         checkDiscardedStat(rhs)
       }.asPatch
