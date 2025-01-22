@@ -1,4 +1,4 @@
-ThisBuild / tlBaseVersion := "0.4"
+ThisBuild / tlBaseVersion := "0.5"
 
 ThisBuild / crossScalaVersions := Seq(V.scala213, V.scala212)
 ThisBuild / scalaVersion       := (ThisBuild / crossScalaVersions).value.head
