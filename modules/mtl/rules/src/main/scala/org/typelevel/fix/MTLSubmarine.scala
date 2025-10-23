@@ -1,0 +1,219 @@
+/*
+ * Copyright 2022 Typelevel
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.typelevel.fix
+
+import scalafix.v1._
+
+import scala.meta._
+
+class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
+
+  private val Syntax_M =
+    SymbolMatcher.exact("cats/syntax/ApplicativeErrorOps#") +
+      SymbolMatcher.exact("cats/syntax/ApplicativeErrorFUnitOps#") +
+      SymbolMatcher.exact("cats/syntax/MonadErrorOps#")
+
+  private val Direct_M =
+    SymbolMatcher.exact("cats/ApplicativeError#") +
+      SymbolMatcher.exact("cats/MonadError#")
+
+  private val Raise_M =
+    SymbolMatcher.exact("cats/mtl/Raise#")
+
+  private val RaiseAll_M =
+    SymbolMatcher.exact("cats/mtl/Raise#") +
+      SymbolMatcher.exact("cats/mtl/Raise.") +
+      SymbolMatcher.exact("cats/mtl/syntax/RaiseOps#")
+
+  private val ContextFunction_M =
+    (1 to 22).map(i => SymbolMatcher.exact(s"scala/ContextFunction$i#")).reduce(_ + _)
+
+  private val IO_M =
+    SymbolMatcher.normalized("cats/effect/IO#handleError().") +
+      SymbolMatcher.normalized("cats/effect/IO#handleErrorWith().") +
+      SymbolMatcher.normalized("cats/effect/IO#recover().") +
+      SymbolMatcher.normalized("cats/effect/IO#recoverWith().") +
+      SymbolMatcher.normalized("cats/effect/IO#attempt().") +
+      SymbolMatcher.normalized("cats/effect/IO#redeem().") +
+      SymbolMatcher.normalized("cats/effect/IO#redeemWith().") +
+      SymbolMatcher.normalized("cats/effect/IO#adaptError().") +
+      SymbolMatcher.normalized("cats/effect/IO#onError().") +
+      SymbolMatcher.normalized("cats/effect/IO#orElse().") +
+      SymbolMatcher.normalized("cats/effect/IO#voidError().") +
+      SymbolMatcher.normalized("cats/effect/IO#attemptTap().")
+
+  override def fix(implicit doc: SemanticDocument): Patch =
+    doc.tree.collect {
+      // syntax, e.g. `raise.onError { e => ??? }`
+      case t @ Term.Apply.After_4_6_0(Term.Select(qual, Term.Name(name)), _)
+          if Syntax_M.matches(t.symbol.owner) && producedByRaise(qual) =>
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+
+      // syntax, e.g. `raise.voidError`
+      case t @ Term.Select(qual, Term.Name(name))
+          if Syntax_M.matches(t.symbol.owner) && producedByRaise(qual) =>
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+
+      // direct, e.g. `Async[F].onError(raise) { e => ??? }`
+      case t @ Term.Apply.After_4_6_0(_, _)
+          if isOwner(t.symbol, Direct_M) && anyArgComesFromRaise(t) =>
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, None))
+
+      // IO direct methods, e.g. `raise.onError { e => ??? }`
+      case t @ Term.Apply.After_4_6_0(sel @ Term.Select(qual, Term.Name(name)), _)
+          if IO_M.matches(sel) && producedByRaise(qual) =>
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+
+      case t @ Term.Select(qual, Term.Name(name)) if IO_M.matches(t) && producedByRaise(qual) =>
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+    }.asPatch
+
+  private def producedByRaise(qual: Term)(implicit doc: SemanticDocument) =
+    methodRequiresImplicitRaise(qual) || originatesFromRaiseOperation(qual)
+
+  private def originatesFromRaiseOperation(term: Term)(implicit doc: SemanticDocument) =
+    calleeSymbol(term).exists(sym => isOwner(sym, RaiseAll_M))
+
+  private def anyArgComesFromRaise(term: Term)(implicit doc: SemanticDocument): Boolean = {
+    @annotation.tailrec
+    def loop(t: Term): Boolean =
+      t match {
+        case Term.Apply.After_4_6_0(fun, args) =>
+          if (args.exists(producedByRaise)) true
+          else loop(fun)
+
+        case Term.ApplyType.After_4_6_0(fun, _) =>
+          loop(fun)
+
+        case _ =>
+          false
+      }
+
+    loop(term)
+  }
+
+  private def isOwner(sym: Symbol, matcher: SymbolMatcher): Boolean = {
+    @annotation.tailrec
+    def loop(s: Symbol): Boolean =
+      if (s == Symbol.None) false
+      else {
+        val o = s.owner
+        if (matcher.matches(o)) true
+        else loop(o)
+      }
+    loop(sym)
+  }
+
+  private def methodRequiresImplicitRaise(qual: Term)(implicit doc: SemanticDocument): Boolean =
+    calleeSymbol(qual).flatMap(sym => doc.info(sym)).exists { info =>
+      info.signature match {
+        case m: MethodSignature =>
+          requiresRaiseViaParams(m) || requiresRaiseViaContextFunction(m)
+
+        case _ =>
+          false
+      }
+    }
+
+  // any implicit parameter whose type constructor is Raise
+  private def requiresRaiseViaParams(m: MethodSignature)(implicit doc: SemanticDocument): Boolean =
+    m.parameterLists.exists(_.exists { p =>
+      doc.info(p.symbol).exists { pi =>
+        val isUsingOrImplicit = pi.isImplicit
+        isUsingOrImplicit && paramIsRaise(pi.signature)
+      }
+    })
+
+  // Scala 3: handle def f: Raise[F, E] ?=> R
+  private def requiresRaiseViaContextFunction(
+    m: MethodSignature
+  )(implicit doc: SemanticDocument): Boolean =
+    m.returnType match {
+      case TypeRef(_, sym, args) if ContextFunction_M.matches(sym) =>
+        args.exists(typeIsRaise)
+
+      case _ =>
+        false
+    }
+
+  private def paramIsRaise(sig: Signature)(implicit doc: SemanticDocument): Boolean =
+    sig match {
+      case ValueSignature(tpe) => typeIsRaise(tpe)
+      case _                   => false
+    }
+
+  private def typeIsRaise(tpe: SemanticType)(implicit doc: SemanticDocument): Boolean =
+    tpe match {
+      // matches Raise[F, E] for any F and E
+      case TypeRef(_, sym, _) if Raise_M.matches(sym) =>
+        true
+
+      // handle aliases like type R[F, E] = Raise[F, E]
+      case TypeRef(_, _, args) if args.nonEmpty =>
+        args.exists(typeIsRaise)
+
+      case AnnotatedType(_, underlying) =>
+        typeIsRaise(underlying)
+
+      case _ =>
+        false
+    }
+
+  private def calleeSymbol(term: Term)(implicit doc: SemanticDocument): Option[Symbol] =
+    term match {
+      case Term.Apply.After_4_6_0(fun, _)     => calleeSymbol(fun)
+      case Term.ApplyType.After_4_6_0(fun, _) => calleeSymbol(fun)
+      case Term.Select(_, n)                  => Some(n.symbol)
+      case n: Term.Name                       => Some(n.symbol)
+      case Term.Block(stats) =>
+        stats.lastOption.collect { case t: Term => t }.flatMap(calleeSymbol)
+
+      case Term.If.After_4_4_0(_, thn, els, _) =>
+        calleeSymbol(thn).orElse(calleeSymbol(els))
+
+      case Term.Match.After_4_9_9(_, cases, _) =>
+        cases.view.flatMap(c => calleeSymbol(c.body)).headOption
+
+      case _ => None
+    }
+
+}
+
+object MTLSubmarine {
+
+  final class SubmarineErrorHandlingDiagnostic(
+    tree: Tree,
+    method: Option[String]
+  ) extends Diagnostic {
+
+    override def message: String = {
+      val suchAs = method.fold("")(m => s", such as `$m`,")
+      s"Avoid calling error-handling methods$suchAs " +
+        s"on expressions that require `cats.mtl.Raise[F, *]`. " +
+        s"Errors raised through `Raise` represented by a traceless exception type `cats.mtl.Handle#Submarine`. " +
+        s"Handling them with `ApplicativeError`, `MonadError`, or `IO` error-handling " +
+        s"methods might lead to unexpected results. " +
+        s"Use `cats.mtl.Handle[F, *].handle` or `cats.mtl.Handle[F, *].handleWith` " +
+        s"to manage these cases explicitly."
+    }
+
+    def position: Position = tree.pos
+
+    override def categoryID: String = "mtlSubmarineErrorHandling"
+  }
+
+}

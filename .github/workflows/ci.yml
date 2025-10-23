@@ -74,11 +74,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: mkdir -p modules/fs2/rules/target target/rules-aggregate/target modules/cats-effect/rules/target modules/http4s/rules/target modules/cats/rules/target project/target
+        run: mkdir -p modules/fs2/rules/target target/rules-aggregate/target modules/cats-effect/rules/target modules/http4s/rules/target modules/mtl/rules/target modules/cats/rules/target project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: tar cf targets.tar modules/fs2/rules/target target/rules-aggregate/target modules/cats-effect/rules/target modules/http4s/rules/target modules/cats/rules/target project/target
+        run: tar cf targets.tar modules/fs2/rules/target target/rules-aggregate/target modules/cats-effect/rules/target modules/http4s/rules/target modules/mtl/rules/target modules/cats/rules/target project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
@@ -195,7 +195,7 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: cats-output_2.13 cats-output_2.12 http4s_2.13 http4s_2.12 fs2_2.13 fs2_2.12 cats-effect_2.13 cats-effect_2.12 cats-tests_2.13 cats-tests_2.12 fs2-tests_2.13 fs2-tests_2.12 cats-effect-tests_2.13 cats-effect-tests_2.12 typelevel-scalafix_2.13 typelevel-scalafix_2.12 fs2-output_2.13 fs2-output_2.12 fs2-input_2.13 fs2-input_2.12 cats-effect-input_2.13 cats-effect-input_2.12 http4s-tests_2.13 http4s-tests_2.12 http4s-input_2.13 http4s-input_2.12 cats-effect-output_2.13 cats-effect-output_2.12 http4s-output_2.13 http4s-output_2.12 cats_2.13 cats_2.12 cats-input_2.13 cats-input_2.12
+          modules-ignore: mtl-output_2.13 mtl-output_2.12 cats-output_2.13 cats-output_2.12 http4s_2.13 http4s_2.12 fs2_2.13 fs2_2.12 mtl-tests_2.13 mtl-tests_2.12 cats-effect_2.13 cats-effect_2.12 cats-tests_2.13 cats-tests_2.12 fs2-tests_2.13 fs2-tests_2.12 cats-effect-tests_2.13 cats-effect-tests_2.12 typelevel-scalafix_2.13 typelevel-scalafix_2.12 fs2-output_2.13 fs2-output_2.12 fs2-input_2.13 fs2-input_2.12 cats-effect-input_2.13 cats-effect-input_2.12 http4s-tests_2.13 http4s-tests_2.12 mtl-input_2.13 mtl-input_3 http4s-input_2.13 http4s-input_2.12 mtl_2.13 mtl_2.12 cats-effect-output_2.13 cats-effect-output_2.12 http4s-output_2.13 http4s-output_2.12 cats_2.13 cats_2.12 cats-input_2.13 cats-input_2.12
           configs-ignore: test scala-tool scala-doc-tool test-internal
 
   validate-steward:

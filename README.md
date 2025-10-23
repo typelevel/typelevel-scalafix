@@ -21,6 +21,8 @@ ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.2.0"
 // To add only cats-effect Scalafix rules
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.2.0"
+// To add only cats-mtl Scalafix rules
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-mtl" % "0.2.0"
 // To add only fs2 Scalafix rules
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.2.0"
 // To add only http4s Scalafix rules
@@ -41,6 +43,7 @@ rules = [
   TypelevelFs2SyncCompiler
   TypelevelHttp4sLiteralsSyntax
   TypelevelIORandomUUID
+  TypelevelMTLSubmarine
 ]
 ```
 
@@ -62,6 +65,7 @@ Not all rules function with Scala 3 yet.
 | TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
 | TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
 | TypelevelHttp4sLiteralsSyntax   | :white_check_mark: | :white_check_mark: |
+| TypelevelMTLSubmarine           | :white_check_mark: | :white_check_mark: |
 
 ## Rules for cats
 
@@ -169,6 +173,36 @@ val test = IO.randomUUID
 ```
 
 This rule works on variable declarations, usaged within methods as well as for comprehensions.
+
+## Rules for cats-mtl
+
+### TypelevelMTLSubmarine
+
+See https://typelevel.org/blog/2025/09/02/custom-error-types.html.
+
+This rule forbids calling error-handling methods (`handleError`, `recover`, `onError`, etc.) 
+on expressions that require `cats.mtl.Raise[F, E]`.
+`Raise` provided by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, 
+so handling it through `ApplicativeError`, `MonadError`, or `IO` error methods might lead to unexpected results.
+
+For example:
+```scala
+import cats.effect.IO
+import cats.mtl.{Raise, Handle}
+
+def raiseError: Raise[IO, String] ?=> IO[Unit] = r =>
+  r.raise("boom")
+
+def standardError: IO[Unit] =
+  IO.raiseError(new RuntimeException("boom"))
+
+Handle.allow[String] {
+  for {
+    _ <- raiseError.onError(e => IO.println("Error: " + e)) // forbidden
+    _ <- standardError.onError(e => IO.println("Error: " + e)) // allowed
+  } yield 
+}
+```
 
 ## Rules for fs2
 
