@@ -183,7 +183,7 @@ See https://typelevel.org/blog/2025/09/02/custom-error-types.html.
 This rule forbids calling error-handling methods (`handleError`, `recover`, `onError`, etc.) 
 on expressions that require `cats.mtl.Raise[F, E]`.
 `Raise` provided by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, 
-so handling it through `ApplicativeError`, `MonadError`, or `IO` error methods might lead to unexpected results.
+so handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is not always desirable.
 
 For example:
 ```scala

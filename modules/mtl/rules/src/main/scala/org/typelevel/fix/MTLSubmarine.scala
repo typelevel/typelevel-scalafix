@@ -206,7 +206,7 @@ object MTLSubmarine {
         s"on expressions that require `cats.mtl.Raise[F, *]`. " +
         s"Errors raised through `Raise` represented by a traceless exception type `cats.mtl.Handle#Submarine`. " +
         s"Handling them with `ApplicativeError`, `MonadError`, or `IO` error-handling " +
-        s"methods might lead to unexpected results. " +
+        s"methods is not always desirable. " +
         s"Use `cats.mtl.Handle[F, *].handle` or `cats.mtl.Handle[F, *].handleWith` " +
         s"to manage these cases explicitly."
     }
