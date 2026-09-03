@@ -176,6 +176,18 @@ object MTLSubmarineTest {
 
   }
 
+  object DirectProtectedArgument {
+
+    def raiseDependentRecovery[F[_]](error: Throwable)(implicit r: Raise[F, String]): F[Unit] =
+      r.raise(error.getMessage)
+
+    def normalSource[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
+      Async[F].handleErrorWith(Async[F].unit)(raiseDependentRecovery[F])
+      Async[F].redeemWith(Async[F].unit)(raiseDependentRecovery[F], _ => Async[F].unit)
+    }
+
+  }
+
   object RaiseObject {
 
     def applicativeErrorSyntax[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {

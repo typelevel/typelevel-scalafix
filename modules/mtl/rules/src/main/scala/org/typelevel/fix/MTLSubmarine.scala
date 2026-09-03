@@ -98,7 +98,7 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case t @ Term.Apply.After_4_6_0(_, _)
           if isOwner(t.symbol, Direct_M) &&
             calleeName(t).exists(ErrorHandlingMethods) &&
-            anyArgComesFromRaise(t) =>
+            protectedEffectArg(t).exists(producedByRaise) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, None))
 
       // IO direct methods, e.g. `raise.onError { e => ??? }`
@@ -116,22 +116,21 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
   private def originatesFromRaiseOperation(term: Term)(implicit doc: SemanticDocument) =
     calleeSymbol(term).exists(sym => isOwner(sym, RaiseAll_M))
 
-  private def anyArgComesFromRaise(term: Term)(implicit doc: SemanticDocument): Boolean = {
+  private def protectedEffectArg(term: Term): Option[Term] = {
     @annotation.tailrec
-    def loop(t: Term): Boolean =
+    def loop(t: Term, candidate: Option[Term]): Option[Term] =
       t match {
         case Term.Apply.After_4_6_0(fun, args) =>
-          if (args.exists(producedByRaise)) true
-          else loop(fun)
+          loop(fun, args.headOption.orElse(candidate))
 
         case Term.ApplyType.After_4_6_0(fun, _) =>
-          loop(fun)
+          loop(fun, candidate)
 
         case _ =>
-          false
+          candidate
       }
 
-    loop(term)
+    loop(term, None)
   }
 
   private def isOwner(sym: Symbol, matcher: SymbolMatcher): Boolean = {
