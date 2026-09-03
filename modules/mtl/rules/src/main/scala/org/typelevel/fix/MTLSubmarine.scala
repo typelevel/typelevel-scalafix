@@ -160,17 +160,33 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     }
 
   private def typeIsRaise(tpe: SemanticType)(implicit doc: SemanticDocument): Boolean =
+    typeIsRaise(tpe, Set.empty)
+
+  private def typeIsRaise(
+    tpe: SemanticType,
+    visited: Set[Symbol]
+  )(implicit doc: SemanticDocument): Boolean =
     tpe match {
       // matches Raise[F, E] or Handle[F, E] for any F and E
       case TypeRef(_, sym, _) if Raise_M.matches(sym) || Handle_M.matches(sym) =>
         true
 
-      // handle aliases like type R[F, E] = Raise[F, E]
-      case TypeRef(_, _, args) if args.nonEmpty =>
-        args.exists(typeIsRaise)
+      case TypeRef(_, sym, args) =>
+        val inherited =
+          !visited(sym) && doc.info(sym).exists {
+            _.signature match {
+              case c: ClassSignature =>
+                c.parents.exists(typeIsRaise(_, visited + sym))
+
+              case _ =>
+                false
+            }
+          }
+
+        inherited || args.exists(typeIsRaise(_, visited))
 
       case AnnotatedType(_, underlying) =>
-        typeIsRaise(underlying)
+        typeIsRaise(underlying, visited)
 
       case _ =>
         false

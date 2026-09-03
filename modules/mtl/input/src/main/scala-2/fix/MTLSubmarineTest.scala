@@ -117,6 +117,32 @@ object MTLSubmarineTest {
 
   }
 
+  object CustomRaiseSubtype {
+
+    trait CustomRaise[F[_], E]   extends Raise[F, E]
+    trait IndirectRaise[F[_], E] extends CustomRaise[F, E]
+    trait CustomHandle[F[_], E]  extends Handle[F, E]
+
+    def customRaise[F[_]](implicit r: CustomRaise[F, String]): F[Unit] =
+      r.raise("something went wrong")
+
+    def indirectRaise[F[_]](implicit r: IndirectRaise[F, String]): F[Unit] =
+      r.raise("something went wrong")
+
+    def customHandle[F[_]](implicit h: CustomHandle[F, String]): F[Unit] =
+      h.raise("something went wrong")
+
+    def customRaiseHandling[F[_]: Async](implicit r: CustomRaise[F, String]): F[Unit] =
+      customRaise[F].attempt.void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+    def indirectRaiseHandling[F[_]: Async](implicit r: IndirectRaise[F, String]): F[Unit] =
+      Async[F].attempt(indirectRaise[F]).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+    def customHandleHandling[F[_]: Async](implicit h: CustomHandle[F, String]): F[Unit] =
+      customHandle[F].handleErrorWith(_ => Async[F].unit).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+  }
+
   object RaiseObject {
 
     def applicativeErrorSyntax[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
