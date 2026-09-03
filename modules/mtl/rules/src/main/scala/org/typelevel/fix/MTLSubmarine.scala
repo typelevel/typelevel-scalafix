@@ -151,6 +151,9 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
         case m: MethodSignature =>
           requiresRaiseViaParams(m) || requiresRaiseViaContextFunction(m)
 
+        case ValueSignature(tpe) =>
+          requiresRaiseViaContextFunction(tpe)
+
         case _ =>
           false
       }
@@ -169,7 +172,12 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
   private def requiresRaiseViaContextFunction(
     m: MethodSignature
   )(implicit doc: SemanticDocument): Boolean =
-    m.returnType match {
+    requiresRaiseViaContextFunction(m.returnType)
+
+  private def requiresRaiseViaContextFunction(
+    tpe: SemanticType
+  )(implicit doc: SemanticDocument): Boolean =
+    tpe match {
       case TypeRef(_, sym, args) if ContextFunction_M.matches(sym) =>
         args.exists(typeIsRaise)
 
