@@ -34,6 +34,9 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
   private val Raise_M =
     SymbolMatcher.exact("cats/mtl/Raise#")
 
+  private val Handle_M =
+    SymbolMatcher.exact("cats/mtl/Handle#")
+
   private val RaiseAll_M =
     SymbolMatcher.exact("cats/mtl/Raise#") +
       SymbolMatcher.exact("cats/mtl/Raise.") +
@@ -158,8 +161,8 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
   private def typeIsRaise(tpe: SemanticType)(implicit doc: SemanticDocument): Boolean =
     tpe match {
-      // matches Raise[F, E] for any F and E
-      case TypeRef(_, sym, _) if Raise_M.matches(sym) =>
+      // matches Raise[F, E] or Handle[F, E] for any F and E
+      case TypeRef(_, sym, _) if Raise_M.matches(sym) || Handle_M.matches(sym) =>
         true
 
       // handle aliases like type R[F, E] = Raise[F, E]

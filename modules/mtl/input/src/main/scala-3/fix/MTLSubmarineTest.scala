@@ -101,6 +101,29 @@ object MTLSubmarineTest {
 
   }
 
+  object HandleRequirement {
+
+    def method[F[_]](using h: Handle[F, String]): F[Unit] =
+      h.raise("something went wrong")
+
+    def contextFunctionMethod[F[_]]: Handle[F, String] ?=> F[Unit] =
+      summon[Handle[F, String]].raise("something went wrong")
+
+    def applicativeErrorSyntax[F[_]: Async](using h: Handle[F, String]): F[Unit] =
+      method[F].attempt.void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+    def applicativeErrorDirect[F[_]: Async](using h: Handle[F, String]): F[Unit] =
+      Async[F].attempt(method[F]).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+    def io(using h: Handle[IO, String]): IO[Unit] =
+      method[IO].attempt.void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+    def contextFunction = Handle.allow[String] {
+      contextFunctionMethod[IO].attempt.void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    }
+
+  }
+
   object RaiseObject {
 
     def applicativeErrorSyntax[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
