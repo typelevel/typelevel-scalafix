@@ -31,6 +31,25 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     SymbolMatcher.exact("cats/ApplicativeError#") +
       SymbolMatcher.exact("cats/MonadError#")
 
+  private val ErrorHandlingMethods = Set(
+    "adaptErr",
+    "adaptError",
+    "attempt",
+    "attemptNarrow",
+    "attemptT",
+    "attemptTap",
+    "handleError",
+    "handleErrorWith",
+    "onError",
+    "orElse",
+    "orRaise",
+    "recover",
+    "recoverWith",
+    "redeem",
+    "redeemWith",
+    "voidError"
+  )
+
   private val Raise_M =
     SymbolMatcher.exact("cats/mtl/Raise#")
 
@@ -63,17 +82,23 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     doc.tree.collect {
       // syntax, e.g. `raise.onError { e => ??? }`
       case t @ Term.Apply.After_4_6_0(Term.Select(qual, Term.Name(name)), _)
-          if Syntax_M.matches(t.symbol.owner) && producedByRaise(qual) =>
+          if Syntax_M.matches(t.symbol.owner) &&
+            ErrorHandlingMethods(name) &&
+            producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
 
       // syntax, e.g. `raise.voidError`
       case t @ Term.Select(qual, Term.Name(name))
-          if Syntax_M.matches(t.symbol.owner) && producedByRaise(qual) =>
+          if Syntax_M.matches(t.symbol.owner) &&
+            ErrorHandlingMethods(name) &&
+            producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
 
       // direct, e.g. `Async[F].onError(raise) { e => ??? }`
       case t @ Term.Apply.After_4_6_0(_, _)
-          if isOwner(t.symbol, Direct_M) && anyArgComesFromRaise(t) =>
+          if isOwner(t.symbol, Direct_M) &&
+            calleeName(t).exists(ErrorHandlingMethods) &&
+            anyArgComesFromRaise(t) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, None))
 
       // IO direct methods, e.g. `raise.onError { e => ??? }`
@@ -211,6 +236,16 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
         cases.view.flatMap(c => calleeSymbol(c.body)).headOption
 
       case _ => None
+    }
+
+  @annotation.tailrec
+  private def calleeName(term: Term): Option[String] =
+    term match {
+      case Term.Apply.After_4_6_0(fun, _)        => calleeName(fun)
+      case Term.ApplyType.After_4_6_0(fun, _)    => calleeName(fun)
+      case Term.Select(_, Term.Name(methodName)) => Some(methodName)
+      case Term.Name(methodName)                 => Some(methodName)
+      case _                                     => None
     }
 
 }

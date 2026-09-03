@@ -33,12 +33,12 @@ object MTLSubmarineTest {
     }
 
     def monadErrorSyntax[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
-      r.raise[String, Unit]("").ensure(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").ensureOr(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      r.raise[String, Unit]("").ensure(new Exception(""))(_ => false)
+      r.raise[String, Unit]("").ensureOr(_ => new Exception(""))(_ => false)
       r.raise[String, Unit]("").redeemWith(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       r.raise[String, Unit]("").attemptTap(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       r.raise[String, Unit]("").adaptError(_ => new Exception(""))                 // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").reject(_ => new Exception(""))                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      r.raise[String, Unit]("").reject(_ => new Exception(""))
       // ensure other methods aren't affected
       r.raise[String, Unit]("").tupleRight("")
       r.raise[String, Unit]("").void
@@ -62,8 +62,8 @@ object MTLSubmarineTest {
     }
 
     def monadErrorDirect[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
-      Async[F].ensure(r.raise[String, Unit](""))(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Async[F].ensureOr(r.raise[String, Unit](""))(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].ensure(r.raise[String, Unit](""))(new Exception(""))(_ => false)
+      Async[F].ensureOr(r.raise[String, Unit](""))(_ => new Exception(""))(_ => false)
       Async[F].redeemWith(r.raise[String, Unit](""))(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].attemptTap(r.raise[String, Unit](""))(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       // ensure other methods aren't affected
@@ -87,12 +87,12 @@ object MTLSubmarineTest {
       r.raise[String, Unit]("").orRaise(new Exception(""))       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       r.raise[String, Unit]("").voidError                        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       // monad error
-      r.raise[String, Unit]("").ensure(new Exception(""))(_ => false)        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").ensureOr(_ => new Exception(""))(_ => false) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").redeemWith(_ => IO.unit, _ => IO.unit)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").attemptTap(_ => IO.unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").adaptError(_ => new Exception(""))           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      r.raise[String, Unit]("").reject(_ => new Exception(""))               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      r.raise[String, Unit]("").ensure(new Exception(""))(_ => false)
+      r.raise[String, Unit]("").ensureOr(_ => new Exception(""))(_ => false)
+      r.raise[String, Unit]("").redeemWith(_ => IO.unit, _ => IO.unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      r.raise[String, Unit]("").attemptTap(_ => IO.unit)               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      r.raise[String, Unit]("").adaptError(_ => new Exception(""))     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      r.raise[String, Unit]("").reject(_ => new Exception(""))
       // ensure other methods aren't affected
       r.raise[String, Unit]("").void
       r.raise[String, Unit]("").product(r.raise[String, Unit](""))
@@ -205,12 +205,12 @@ object MTLSubmarineTest {
     }
 
     def monadErrorSyntax[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
-      Raise.raise[F, String, Unit]("").ensure(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[F, String, Unit]("").ensureOr(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Raise.raise[F, String, Unit]("").ensure(new Exception(""))(_ => false)
+      Raise.raise[F, String, Unit]("").ensureOr(_ => new Exception(""))(_ => false)
       Raise.raise[F, String, Unit]("").redeemWith(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Raise.raise[F, String, Unit]("").attemptTap(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Raise.raise[F, String, Unit]("").adaptError(_ => new Exception(""))                 // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[F, String, Unit]("").reject(_ => new Exception(""))                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Raise.raise[F, String, Unit]("").reject(_ => new Exception(""))
       // ensure other methods aren't affected
       Raise.raise[F, String, Unit]("").tupleRight("")
       Raise.raise[F, String, Unit]("").void
@@ -234,8 +234,8 @@ object MTLSubmarineTest {
     }
 
     def monadErrorDirect[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
-      Async[F].ensure(Raise.raise[F, String, Unit](""))(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Async[F].ensureOr(Raise.raise[F, String, Unit](""))(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].ensure(Raise.raise[F, String, Unit](""))(new Exception(""))(_ => false)
+      Async[F].ensureOr(Raise.raise[F, String, Unit](""))(_ => new Exception(""))(_ => false)
       Async[F].redeemWith(Raise.raise[F, String, Unit](""))(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].attemptTap(Raise.raise[F, String, Unit](""))(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       // ensure other methods aren't affected
@@ -259,12 +259,12 @@ object MTLSubmarineTest {
       Raise.raise[IO, String, Unit]("").orRaise(new Exception(""))       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Raise.raise[IO, String, Unit]("").voidError                        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       // monad error
-      Raise.raise[IO, String, Unit]("").ensure(new Exception(""))(_ => false)        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[IO, String, Unit]("").ensureOr(_ => new Exception(""))(_ => false) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[IO, String, Unit]("").redeemWith(_ => IO.unit, _ => IO.unit)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[IO, String, Unit]("").attemptTap(_ => IO.unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[IO, String, Unit]("").adaptError(_ => new Exception(""))           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Raise.raise[IO, String, Unit]("").reject(_ => new Exception(""))               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Raise.raise[IO, String, Unit]("").ensure(new Exception(""))(_ => false)
+      Raise.raise[IO, String, Unit]("").ensureOr(_ => new Exception(""))(_ => false)
+      Raise.raise[IO, String, Unit]("").redeemWith(_ => IO.unit, _ => IO.unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Raise.raise[IO, String, Unit]("").attemptTap(_ => IO.unit)               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Raise.raise[IO, String, Unit]("").adaptError(_ => new Exception(""))     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Raise.raise[IO, String, Unit]("").reject(_ => new Exception(""))
       // ensure other methods aren't affected
       Raise.raise[IO, String, Unit]("").void
       Raise.raise[IO, String, Unit]("").product(Raise.raise[IO, String, Unit](""))
@@ -295,12 +295,12 @@ object MTLSubmarineTest {
     }
 
     def monadErrorSyntax[F[_]: Async](using Raise[F, String]): F[Unit] = {
-      "".raise[F, Unit].ensure(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[F, Unit].ensureOr(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      "".raise[F, Unit].ensure(new Exception(""))(_ => false)
+      "".raise[F, Unit].ensureOr(_ => new Exception(""))(_ => false)
       "".raise[F, Unit].redeemWith(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       "".raise[F, Unit].attemptTap(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       "".raise[F, Unit].adaptError(_ => new Exception(""))                 // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[F, Unit].reject(_ => new Exception(""))                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      "".raise[F, Unit].reject(_ => new Exception(""))
       // ensure other methods aren't affected
       "".raise[F, Unit].tupleRight("")
       "".raise[F, Unit].void
@@ -324,8 +324,8 @@ object MTLSubmarineTest {
     }
 
     def monadErrorDirect[F[_]: Async](using Raise[F, String]): F[Unit] = {
-      Async[F].ensure("".raise[F, Unit])(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      Async[F].ensureOr("".raise[F, Unit])(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].ensure("".raise[F, Unit])(new Exception(""))(_ => false)
+      Async[F].ensureOr("".raise[F, Unit])(_ => new Exception(""))(_ => false)
       Async[F].redeemWith("".raise[F, Unit])(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].attemptTap("".raise[F, Unit])(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       // ensure other methods aren't affected
@@ -349,12 +349,12 @@ object MTLSubmarineTest {
       "".raise[IO, Unit].orRaise(new Exception(""))       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       "".raise[IO, Unit].voidError                        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       // monad error
-      "".raise[IO, Unit].ensure(new Exception(""))(_ => false)        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[IO, Unit].ensureOr(_ => new Exception(""))(_ => false) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[IO, Unit].redeemWith(_ => IO.unit, _ => IO.unit)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[IO, Unit].attemptTap(_ => IO.unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[IO, Unit].adaptError(_ => new Exception(""))           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-      "".raise[IO, Unit].reject(_ => new Exception(""))               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      "".raise[IO, Unit].ensure(new Exception(""))(_ => false)
+      "".raise[IO, Unit].ensureOr(_ => new Exception(""))(_ => false)
+      "".raise[IO, Unit].redeemWith(_ => IO.unit, _ => IO.unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      "".raise[IO, Unit].attemptTap(_ => IO.unit)               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      "".raise[IO, Unit].adaptError(_ => new Exception(""))     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      "".raise[IO, Unit].reject(_ => new Exception(""))
       // ensure other methods aren't affected
       "".raise[IO, Unit].void
       "".raise[IO, Unit].debug()
@@ -470,8 +470,8 @@ object MTLSubmarineTest {
 
     def raiseWithMonadErrorDirect[F[_]: Async] = Handle.allow[String] {
       for {
-        _ <- Async[F].ensure(methodRaise[F])(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- Async[F].ensureOr(methodRaise[F])(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- Async[F].ensure(methodRaise[F])(new Exception(""))(_ => false)
+        _ <- Async[F].ensureOr(methodRaise[F])(_ => new Exception(""))(_ => false)
         _ <- Async[F].redeemWith(methodRaise[F])(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- Async[F].attemptTap(methodRaise[F])(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         // ensure other methods aren't affected
@@ -482,12 +482,12 @@ object MTLSubmarineTest {
 
     def raiseWithMonadErrorSyntax[F[_]: Async] = Handle.allow[String] {
       for {
-        _ <- methodRaise[F].ensure(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[F].ensureOr(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[F].ensure(new Exception(""))(_ => false)
+        _ <- methodRaise[F].ensureOr(_ => new Exception(""))(_ => false)
         _ <- methodRaise[F].redeemWith(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- methodRaise[F].attemptTap(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- methodRaise[F].adaptError { case _ => new Exception("") }         // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[F].reject { case _ => new Exception("") }             // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[F].reject { case _ => new Exception("") }
         // ensure other methods aren't affected
         _ <- methodRaise[F].void
         _ <- methodRaise[F].tupleRight("")
@@ -537,12 +537,12 @@ object MTLSubmarineTest {
         _ <- methodRaise[IO].orRaise(new Exception(""))               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- methodRaise[IO].voidError                                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         // monad error
-        _ <- methodRaise[IO].ensure(new Exception(""))(_ => false)        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].ensureOr(_ => new Exception(""))(_ => false) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].redeemWith(_ => IO.unit, _ => IO.unit)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].attemptTap(_ => IO.unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].adaptError { case _ => new Exception("") }   // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].reject { case _ => new Exception("") }       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].ensure(new Exception(""))(_ => false)
+        _ <- methodRaise[IO].ensureOr(_ => new Exception(""))(_ => false)
+        _ <- methodRaise[IO].redeemWith(_ => IO.unit, _ => IO.unit)     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].attemptTap(_ => IO.unit)                   // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].adaptError { case _ => new Exception("") } // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].reject { case _ => new Exception("") }
         // ensure other methods aren't affected
         _ <- methodRaise[IO].void
         _ <- methodRaise[IO].debug()
@@ -656,8 +656,8 @@ object MTLSubmarineTest {
 
     def raiseWithMonadErrorDirect[F[_]: Async] = Handle.allow[String] {
       for {
-        _ <- Async[F].ensure(methodRaise[F])(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- Async[F].ensureOr(methodRaise[F])(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- Async[F].ensure(methodRaise[F])(new Exception(""))(_ => false)
+        _ <- Async[F].ensureOr(methodRaise[F])(_ => new Exception(""))(_ => false)
         _ <- Async[F].redeemWith(methodRaise[F])(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- Async[F].attemptTap(methodRaise[F])(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         // ensure other methods aren't affected
@@ -668,12 +668,12 @@ object MTLSubmarineTest {
 
     def raiseWithMonadErrorSyntax[F[_]: Async] = Handle.allow[String] {
       for {
-        _ <- methodRaise[F].ensure(new Exception(""))(_ => false)              // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[F].ensureOr(_ => new Exception(""))(_ => false)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[F].ensure(new Exception(""))(_ => false)
+        _ <- methodRaise[F].ensureOr(_ => new Exception(""))(_ => false)
         _ <- methodRaise[F].redeemWith(_ => Async[F].unit, _ => Async[F].unit) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- methodRaise[F].attemptTap(_ => Async[F].unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- methodRaise[F].adaptError { case _ => new Exception("") }         // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[F].reject { case _ => new Exception("") }             // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[F].reject { case _ => new Exception("") }
         // ensure other methods aren't affected
         _ <- methodRaise[F].void
         _ <- methodRaise[F].tupleRight("")
@@ -723,12 +723,12 @@ object MTLSubmarineTest {
         _ <- methodRaise[IO].orRaise(new Exception(""))               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         _ <- methodRaise[IO].voidError                                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
         // monad error
-        _ <- methodRaise[IO].ensure(new Exception(""))(_ => false)        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].ensureOr(_ => new Exception(""))(_ => false) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].redeemWith(_ => IO.unit, _ => IO.unit)       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].attemptTap(_ => IO.unit)                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].adaptError { case _ => new Exception("") }   // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-        _ <- methodRaise[IO].reject { case _ => new Exception("") }       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].ensure(new Exception(""))(_ => false)
+        _ <- methodRaise[IO].ensureOr(_ => new Exception(""))(_ => false)
+        _ <- methodRaise[IO].redeemWith(_ => IO.unit, _ => IO.unit)     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].attemptTap(_ => IO.unit)                   // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].adaptError { case _ => new Exception("") } // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- methodRaise[IO].reject { case _ => new Exception("") }
         // ensure other methods aren't affected
         _ <- methodRaise[IO].void
         _ <- methodRaise[IO].debug()
