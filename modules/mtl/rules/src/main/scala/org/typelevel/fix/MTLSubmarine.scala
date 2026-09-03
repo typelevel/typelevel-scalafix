@@ -178,6 +178,9 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
               case c: ClassSignature =>
                 c.parents.exists(typeIsRaise(_, visited + sym))
 
+              case t: TypeSignature =>
+                typeIsRaise(t.upperBound, visited + sym)
+
               case _ =>
                 false
             }
