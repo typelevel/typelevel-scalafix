@@ -31,6 +31,27 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     SymbolMatcher.exact("cats/ApplicativeError#") +
       SymbolMatcher.exact("cats/MonadError#")
 
+  private val PropagationDirect_M =
+    SymbolMatcher.exact("cats/Functor#") +
+      SymbolMatcher.exact("cats/FlatMap#") +
+      SymbolMatcher.exact("cats/Apply#") +
+      SymbolMatcher.exact("cats/Applicative#") +
+      SymbolMatcher.exact("cats/Monad#") +
+      SymbolMatcher.exact("cats/Semigroupal#")
+
+  private val UnaryPropagationMethods = Set("map", "void", "as")
+  private val BinaryPropagationMethods =
+    Set(
+      "product",
+      "productL",
+      "productR",
+      "map2",
+      ">>",
+      "*>",
+      "<*"
+    )
+  private val FlatMapPropagationMethods = Set("flatMap", ">>=", "flatTap", "mproduct")
+
   private val ErrorHandlingMethods = Set(
     "adaptErr",
     "adaptError",
@@ -111,10 +132,83 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     }.asPatch
 
   private def producedByRaise(qual: Term)(implicit doc: SemanticDocument) =
-    methodRequiresImplicitRaise(qual) || originatesFromRaiseOperation(qual)
+    methodRequiresImplicitRaise(qual) ||
+      originatesFromRaiseOperation(qual) ||
+      originatesFromPropagation(qual) ||
+      originatesFromForComprehension(qual)
 
   private def originatesFromRaiseOperation(term: Term)(implicit doc: SemanticDocument) =
     calleeSymbol(term).exists(sym => isOwner(sym, RaiseAll_M))
+
+  private def originatesFromPropagation(term: Term)(implicit doc: SemanticDocument): Boolean =
+    appliedCall(term).exists { case (receiver, method, argumentLists) =>
+      calleeSymbol(term).exists { symbol =>
+        val isCatsOperation = symbol.value.startsWith("cats/")
+        val isDirect        = isOwner(symbol, PropagationDirect_M)
+        val firstArguments  = argumentLists.headOption.getOrElse(Nil)
+
+        if (!isCatsOperation) false
+        else if (UnaryPropagationMethods(method)) {
+          val source = if (isDirect) firstArguments.headOption else Some(receiver)
+          source.exists(producedByRaise)
+        } else if (BinaryPropagationMethods(method)) {
+          val sources = if (isDirect) firstArguments.take(2) else receiver :: firstArguments.take(1)
+          sources.exists(producedByRaise)
+        } else if (FlatMapPropagationMethods(method)) {
+          val source = if (isDirect) firstArguments.headOption else Some(receiver)
+          val callback =
+            if (isDirect) argumentLists.drop(1).headOption.flatMap(_.headOption)
+            else firstArguments.headOption
+
+          source.exists(producedByRaise) || callback.exists(callbackProducesRaise)
+        } else false
+      }
+    }
+
+  private def callbackProducesRaise(term: Term)(implicit doc: SemanticDocument): Boolean =
+    term match {
+      case Term.Function.After_4_6_0(_, body: Term) => producedByRaise(body)
+      case other                                    => producedByRaise(other)
+    }
+
+  private def originatesFromForComprehension(
+    term: Term
+  )(implicit doc: SemanticDocument): Boolean = {
+    def generatorsProduceRaise(enumerators: List[Enumerator]): Boolean =
+      enumerators.exists {
+        case Enumerator.Generator(_, rhs) => producedByRaise(rhs)
+        case _                            => false
+      }
+
+    term match {
+      case Term.For.After_4_9_9(enumerators, _)      => generatorsProduceRaise(enumerators)
+      case Term.ForYield.After_4_9_9(enumerators, _) => generatorsProduceRaise(enumerators)
+      case _                                         => false
+    }
+  }
+
+  private def appliedCall(term: Term): Option[(Term, String, List[List[Term]])] = {
+    @annotation.tailrec
+    def loop(t: Term, argumentLists: List[List[Term]]): Option[(Term, String, List[List[Term]])] =
+      t match {
+        case Term.Apply.After_4_6_0(fun, args) =>
+          loop(fun, args :: argumentLists)
+
+        case Term.ApplyType.After_4_6_0(fun, _) =>
+          loop(fun, argumentLists)
+
+        case Term.ApplyInfix.Initial(receiver, Term.Name(method), _, args) =>
+          Some((receiver, method, List(args)))
+
+        case Term.Select(receiver, Term.Name(method)) =>
+          Some((receiver, method, argumentLists))
+
+        case _ =>
+          None
+      }
+
+    loop(term, Nil)
+  }
 
   private def protectedEffectArg(term: Term): Option[Term] = {
     @annotation.tailrec
@@ -229,10 +323,11 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
   private def calleeSymbol(term: Term)(implicit doc: SemanticDocument): Option[Symbol] =
     term match {
-      case Term.Apply.After_4_6_0(fun, _)     => calleeSymbol(fun)
-      case Term.ApplyType.After_4_6_0(fun, _) => calleeSymbol(fun)
-      case Term.Select(_, n)                  => Some(n.symbol)
-      case n: Term.Name                       => Some(n.symbol)
+      case Term.Apply.After_4_6_0(fun, _)       => calleeSymbol(fun)
+      case Term.ApplyType.After_4_6_0(fun, _)   => calleeSymbol(fun)
+      case Term.ApplyInfix.Initial(_, op, _, _) => Some(op.symbol)
+      case Term.Select(_, n)                    => Some(n.symbol)
+      case n: Term.Name                         => Some(n.symbol)
       case Term.Block(stats) =>
         stats.lastOption.collect { case t: Term => t }.flatMap(calleeSymbol)
 

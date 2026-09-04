@@ -210,6 +210,40 @@ object MTLSubmarineTest {
 
   }
 
+  object EffectPropagation {
+
+    def methodRaise[F[_]](using r: Raise[F, String]): F[Unit] =
+      r.raise("something went wrong")
+
+    def syntax[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
+      methodRaise[F].map(identity).attempt                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].void.recover(_ => ())                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].as(()).attempt                            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (Async[F].unit *> methodRaise[F]).attempt                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (methodRaise[F] <* Async[F].unit).attempt                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (Async[F].unit >> methodRaise[F]).attempt                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].product(Async[F].unit).attempt            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.product(methodRaise[F]).attempt            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.map2(methodRaise[F])((_, _) => ()).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].flatMap(_ => Async[F].unit).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.flatMap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.flatTap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (Async[F].unit >>= (_ => methodRaise[F])).attempt        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.mproduct(_ => methodRaise[F]).attempt      // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.map(identity).attempt
+      (for { // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        _ <- Async[F].unit
+        _ <- methodRaise[F]
+      } yield ()).attempt.void
+    }
+
+    def direct[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
+      Async[F].attempt(Async[F].map(methodRaise[F])(identity)).void               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].attempt(Async[F].flatMap(Async[F].unit)(_ => methodRaise[F])).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    }
+
+  }
+
   object RaiseObject {
 
     def applicativeErrorSyntax[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
