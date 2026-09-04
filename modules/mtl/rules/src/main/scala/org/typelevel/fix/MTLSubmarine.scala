@@ -131,11 +131,15 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
     }.asPatch
 
-  private def producedByRaise(qual: Term)(implicit doc: SemanticDocument) =
-    methodRequiresImplicitRaise(qual) ||
-      originatesFromRaiseOperation(qual) ||
-      originatesFromPropagation(qual) ||
-      originatesFromForComprehension(qual)
+  private def producedByRaise(term: Term)(implicit doc: SemanticDocument): Boolean =
+    term match {
+      case Term.Ascribe(expr, _) => producedByRaise(expr)
+      case _ =>
+        methodRequiresImplicitRaise(term) ||
+        originatesFromRaiseOperation(term) ||
+        originatesFromPropagation(term) ||
+        originatesFromForComprehension(term)
+    }
 
   private def originatesFromRaiseOperation(term: Term)(implicit doc: SemanticDocument) =
     calleeSymbol(term).exists(sym => isOwner(sym, RaiseAll_M))

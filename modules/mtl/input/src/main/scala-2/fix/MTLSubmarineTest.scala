@@ -220,6 +220,12 @@ object MTLSubmarineTest {
       Async[F].attempt(Async[F].flatMap(Async[F].unit)(_ => methodRaise[F])).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     }
 
+    def expressionWrappers[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
+      (methodRaise[F]: F[Unit]).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (((methodRaise[F]))).attempt      // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (Async[F].unit: F[Unit]).attempt.void
+    }
+
   }
 
   object RaiseObject {
