@@ -134,6 +134,8 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
   private def producedByRaise(term: Term)(implicit doc: SemanticDocument): Boolean =
     term match {
       case Term.Ascribe(expr, _) => producedByRaise(expr)
+      case Term.If.After_4_4_0(_, thenBranch, elseBranch, _) =>
+        producedByRaise(thenBranch) || producedByRaise(elseBranch)
       case _ =>
         methodRequiresImplicitRaise(term) ||
         originatesFromRaiseOperation(term) ||
