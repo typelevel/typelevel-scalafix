@@ -254,6 +254,21 @@ object MTLSubmarineTest {
       (if (condition) Async[F].unit else Async[F].unit).attempt.void
     }
 
+    def matched[F[_]: Async](condition: Boolean)(using r: Raise[F, String]): F[Unit] = {
+      (condition match { // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        case true  => Async[F].unit
+        case false => methodRaise[F]
+      }).attempt
+      (condition match { // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        case true  => methodRaise[F]
+        case false => Async[F].unit
+      }).attempt
+      (condition match {
+        case true  => Async[F].unit
+        case false => Async[F].unit
+      }).attempt.void
+    }
+
   }
 
   object RaiseObject {

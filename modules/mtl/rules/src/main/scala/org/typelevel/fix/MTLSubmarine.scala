@@ -136,6 +136,8 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case Term.Ascribe(expr, _) => producedByRaise(expr)
       case Term.If.After_4_4_0(_, thenBranch, elseBranch, _) =>
         producedByRaise(thenBranch) || producedByRaise(elseBranch)
+      case Term.Match.After_4_9_9(_, cases, _) =>
+        cases.exists(c => producedByRaise(c.body))
       case _ =>
         methodRequiresImplicitRaise(term) ||
         originatesFromRaiseOperation(term) ||
