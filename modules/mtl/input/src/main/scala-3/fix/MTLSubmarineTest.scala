@@ -124,32 +124,6 @@ object MTLSubmarineTest {
 
   }
 
-  object CustomRaiseSubtype {
-
-    trait CustomRaise[F[_], E]   extends Raise[F, E]
-    trait IndirectRaise[F[_], E] extends CustomRaise[F, E]
-    trait CustomHandle[F[_], E]  extends Handle[F, E]
-
-    def customRaise[F[_]](using r: CustomRaise[F, String]): F[Unit] =
-      r.raise("something went wrong")
-
-    def indirectRaise[F[_]](using r: IndirectRaise[F, String]): F[Unit] =
-      r.raise("something went wrong")
-
-    def customHandle[F[_]](using h: CustomHandle[F, String]): F[Unit] =
-      h.raise("something went wrong")
-
-    def customRaiseHandling[F[_]: Async](using r: CustomRaise[F, String]): F[Unit] =
-      customRaise[F].attempt.void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-
-    def indirectRaiseHandling[F[_]: Async](using r: IndirectRaise[F, String]): F[Unit] =
-      Async[F].attempt(indirectRaise[F]).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-
-    def customHandleHandling[F[_]: Async](using h: CustomHandle[F, String]): F[Unit] =
-      customHandle[F].handleErrorWith(_ => Async[F].unit).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-
-  }
-
   object RaiseAlias {
 
     type AliasedRaise[F[_], E]       = Raise[F, E]
@@ -180,6 +154,18 @@ object MTLSubmarineTest {
 
     def chainedHandleHandling[F[_]: Async](using h: ChainedHandleAlias[F, String]): F[Unit] =
       Async[F].handleError(chainedHandle[F])(_ => ()).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+
+  }
+
+  object WrappedRaise {
+
+    trait Wrapper[A]
+
+    def normal[F[_]: Async](using wrapper: Wrapper[Raise[F, String]]): F[Unit] =
+      Async[F].unit
+
+    def handlingNormal[F[_]: Async](using wrapper: Wrapper[Raise[F, String]]): F[Unit] =
+      normal[F].attempt.void
 
   }
 
@@ -266,6 +252,17 @@ object MTLSubmarineTest {
       (condition match {
         case true  => Async[F].unit
         case false => Async[F].unit
+      }).attempt.void
+    }
+
+    def blocks[F[_]: Async](using r: Raise[F, String]): F[Unit] = {
+      ({ // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+        Async[F].unit
+        methodRaise[F]
+      }).attempt
+      ({
+        methodRaise[F]
+        Async[F].unit
       }).attempt.void
     }
 

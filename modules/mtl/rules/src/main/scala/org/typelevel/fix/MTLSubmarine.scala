@@ -134,6 +134,8 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
   private def producedByRaise(term: Term)(implicit doc: SemanticDocument): Boolean =
     term match {
       case Term.Ascribe(expr, _) => producedByRaise(expr)
+      case Term.Block(stats) =>
+        stats.lastOption.collect { case result: Term => producedByRaise(result) }.getOrElse(false)
       case Term.If.After_4_4_0(_, thenBranch, elseBranch, _) =>
         producedByRaise(thenBranch) || producedByRaise(elseBranch)
       case Term.Match.After_4_9_9(_, cases, _) =>
@@ -305,22 +307,16 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case TypeRef(_, sym, _) if Raise_M.matches(sym) || Handle_M.matches(sym) =>
         true
 
-      case TypeRef(_, sym, args) =>
-        val inherited =
-          !visited(sym) && doc.info(sym).exists {
-            _.signature match {
-              case c: ClassSignature =>
-                c.parents.exists(typeIsRaise(_, visited + sym))
+      case TypeRef(_, sym, _) =>
+        !visited(sym) && doc.info(sym).exists {
+          _.signature match {
+            case t: TypeSignature =>
+              typeIsRaise(t.upperBound, visited + sym)
 
-              case t: TypeSignature =>
-                typeIsRaise(t.upperBound, visited + sym)
-
-              case _ =>
-                false
-            }
+            case _ =>
+              false
           }
-
-        inherited || args.exists(typeIsRaise(_, visited))
+        }
 
       case AnnotatedType(_, underlying) =>
         typeIsRaise(underlying, visited)
