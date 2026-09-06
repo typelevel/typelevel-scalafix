@@ -205,6 +205,13 @@ user-defined wrappers. For example, a call such as `tolerate(raiseError)` is not
 when `tolerate` calls `attempt` internally. Detecting that generally would require
 unrestricted interprocedural analysis.
 
+Concrete member matching is limited to `IO`. Direct error-handling members on `SyncIO`
+and other effects such as `fs2.Stream` are not recognized, and provenance is not traced
+through constructors such as `Stream.eval`. Cats typeclass methods and extension syntax
+remain supported when the protected expression's provenance is otherwise visible. Type
+aliases of `Raise` and `Handle` are supported, but arbitrary user-defined subtypes are
+not inferred as capabilities.
+
 For partial and narrow handlers, the rule warns only when the handler can match
 `Handle.Submarine`, which extends `RuntimeException`. Wildcards and patterns typed as
 `RuntimeException`, `Exception`, or `Throwable` are reported, while provably disjoint
