@@ -194,6 +194,8 @@ object MTLSubmarineTest {
       (Async[F].unit >> methodRaise[F]).attempt                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       methodRaise[F].product(Async[F].unit).attempt            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.product(methodRaise[F]).attempt            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].productL(Async[F].unit).attempt           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].unit.productR(methodRaise[F]).attempt           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.map2(methodRaise[F])((_, _) => ()).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       methodRaise[F].flatMap(_ => Async[F].unit).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.flatMap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
@@ -210,6 +212,29 @@ object MTLSubmarineTest {
     def direct[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
       Async[F].attempt(Async[F].map(methodRaise[F])(identity)).void               // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].attempt(Async[F].flatMap(Async[F].unit)(_ => methodRaise[F])).void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      Async[F].attempt(Async[F].map(Async[F].unit)(identity)).void
+      Async[F].attempt(Async[F].flatMap(Async[F].unit)(_ => Async[F].unit)).void
+    }
+
+    def safeSyntax[F[_]: Async]: F[Unit] = {
+      Async[F].unit.map(identity).attempt
+      Async[F].unit.void.recover(_ => ())
+      Async[F].unit.as(()).attempt
+      (Async[F].unit *> Async[F].unit).attempt
+      (Async[F].unit <* Async[F].unit).attempt
+      (Async[F].unit >> Async[F].unit).attempt
+      Async[F].unit.product(Async[F].unit).attempt
+      Async[F].unit.productL(Async[F].unit).attempt
+      Async[F].unit.productR(Async[F].unit).attempt
+      Async[F].unit.map2(Async[F].unit)((_, _) => ()).attempt
+      Async[F].unit.flatMap(_ => Async[F].unit).attempt
+      Async[F].unit.flatTap(_ => Async[F].unit).attempt
+      (Async[F].unit >>= (_ => Async[F].unit)).attempt
+      Async[F].unit.mproduct(_ => Async[F].unit).attempt
+      (for {
+        _ <- Async[F].unit
+        _ <- Async[F].unit
+      } yield ()).attempt.void
     }
 
     def expressionWrappers[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
