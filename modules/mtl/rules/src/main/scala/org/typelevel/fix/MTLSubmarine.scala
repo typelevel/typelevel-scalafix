@@ -41,13 +41,15 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       SymbolMatcher.exact("cats/Monad#") +
       SymbolMatcher.exact("cats/Semigroupal#")
 
-  private val UnaryPropagationMethods = Set("map", "void", "as")
+  private val UnaryPropagationMethods =
+    Set("map", "void", "as", "fproduct", "fproductLeft", "tupleLeft", "tupleRight")
   private val BinaryPropagationMethods =
     Set(
       "product",
       "productL",
       "productR",
       "map2",
+      "<&>",
       ">>",
       "*>",
       "<*"

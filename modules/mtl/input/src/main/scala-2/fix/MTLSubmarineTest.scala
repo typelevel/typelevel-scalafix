@@ -6,6 +6,7 @@ package fix
 import cats.mtl._
 import cats.mtl.syntax.raise._
 import cats.effect._
+import cats.effect.implicits._
 import cats.syntax.all._
 
 import java.io.IOException
@@ -197,6 +198,13 @@ object MTLSubmarineTest {
       methodRaise[F].productL(Async[F].unit).attempt           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.productR(methodRaise[F]).attempt           // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.map2(methodRaise[F])((_, _) => ()).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].fproduct(identity).attempt                // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].fproductLeft(identity).attempt            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].tupleLeft(()).attempt                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].tupleRight(()).attempt                    // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      methodRaise[F].as((_: Unit) => ())
+        .<&>(Async[F].unit)
+        .attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       methodRaise[F].flatMap(_ => Async[F].unit).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.flatMap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.flatTap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
@@ -227,6 +235,11 @@ object MTLSubmarineTest {
       Async[F].unit.productL(Async[F].unit).attempt
       Async[F].unit.productR(Async[F].unit).attempt
       Async[F].unit.map2(Async[F].unit)((_, _) => ()).attempt
+      Async[F].unit.fproduct(identity).attempt
+      Async[F].unit.fproductLeft(identity).attempt
+      Async[F].unit.tupleLeft(()).attempt
+      Async[F].unit.tupleRight(()).attempt
+      Async[F].pure((_: Unit) => ()).<&>(Async[F].unit).attempt
       Async[F].unit.flatMap(_ => Async[F].unit).attempt
       Async[F].unit.flatTap(_ => Async[F].unit).attempt
       (Async[F].unit >>= (_ => Async[F].unit)).attempt
