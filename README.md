@@ -185,6 +185,13 @@ on expressions that require `cats.mtl.Raise[F, E]`.
 `Raise` provided by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, 
 so handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is not always desirable.
 
+Detection is intentionally based on the declared `Raise` capability rather than the
+specific instance selected at a call site. Consequently, the rule may also report code
+where `Raise` is satisfied by an ordinary `ApplicativeError`-backed `Handle` which raises
+the underlying error directly and does not use `Handle.Submarine`. This conservative
+boundary keeps the rule consistent across methods and source modules, where instance
+provenance is not reliably available.
+
 The rule recognizes supported Cats and `IO` error-handling operations at their call
 sites. It cannot reliably discover the same operations hidden inside arbitrary
 user-defined wrappers. For example, a call such as `tolerate(raiseError)` is not reported
