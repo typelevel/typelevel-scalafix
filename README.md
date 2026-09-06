@@ -204,6 +204,11 @@ For partial and narrow handlers, the rule warns only when the handler can match
 concrete classes such as `IOException` are allowed. Unresolved and otherwise uncertain
 patterns are reported conservatively.
 
+The supported behavior is consistent across Scala 2.13 and Scala 3 for constructs
+available in both versions. Scala 3 additionally supports capabilities represented as
+context-function methods or values, such as `Raise[F, E] ?=> F[A]`; Scala 2.13 has no
+equivalent language representation.
+
 For example:
 ```scala
 import cats.effect.IO
