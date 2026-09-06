@@ -180,10 +180,11 @@ This rule works on variable declarations, usaged within methods as well as for c
 
 See https://typelevel.org/blog/2025/09/02/custom-error-types.html.
 
-This rule forbids calling error-handling methods (`handleError`, `recover`, `onError`, etc.) 
-on expressions that require `cats.mtl.Raise[F, E]`.
-`Raise` provided by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, 
-so handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is not always desirable.
+This rule reports supported error-handling methods (`handleError`, `recover`, `onError`,
+etc.) on expressions it identifies as `cats.mtl.Raise[F, E]`-capable. `Raise` provided
+by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, so
+handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is
+not always desirable.
 
 Detection is intentionally based on the declared `Raise` capability rather than the
 specific instance selected at a call site. Consequently, the rule may also report code
