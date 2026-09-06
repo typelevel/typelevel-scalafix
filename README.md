@@ -185,6 +185,12 @@ on expressions that require `cats.mtl.Raise[F, E]`.
 `Raise` provided by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, 
 so handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is not always desirable.
 
+The rule recognizes supported Cats and `IO` error-handling operations at their call
+sites. It cannot reliably discover the same operations hidden inside arbitrary
+user-defined wrappers. For example, a call such as `tolerate(raiseError)` is not reported
+when `tolerate` calls `attempt` internally. Detecting that generally would require
+unrestricted interprocedural analysis.
+
 For example:
 ```scala
 import cats.effect.IO
