@@ -13,6 +13,10 @@ import java.io.IOException
 // scalafmt: { maxColumn = 160 }
 object MTLSubmarineTest {
 
+  // Test matrix: objects select the provenance source or propagation shape; methods
+  // select the handler form and effect type; this file selects Scala 2.13; an `assert`
+  // comment means a diagnostic is expected, while its absence means the call is safe.
+
   object RaiseInstance {
 
     def applicativeErrorSyntax[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
