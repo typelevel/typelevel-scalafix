@@ -134,20 +134,20 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
     doc.tree.collect {
       // syntax, e.g. `raise.onError { e => ??? }`
-      case t @ Term.Apply.After_4_6_0(Term.Select(qual, Term.Name(name)), _)
+      case t @ Term.Apply.After_4_6_0(Term.Select(qual, method @ Term.Name(name)), _)
           if Syntax_M.matches(t.symbol.owner) &&
             ErrorHandlingMethods(name) &&
             handlerMayObserveSubmarine(t, name) &&
             producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
 
       // syntax, e.g. `raise.voidError`
-      case t @ Term.Select(qual, Term.Name(name))
+      case t @ Term.Select(qual, method @ Term.Name(name))
           if Syntax_M.matches(t.symbol.owner) &&
             ParameterlessErrorHandlingMethods(name) &&
             handlerMayObserveSubmarine(t, name) &&
             producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
 
       // direct, e.g. `Async[F].onError(raise) { e => ??? }`
       case t @ Term.Apply.After_4_6_0(_, _)
@@ -155,21 +155,26 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
             calleeName(t)
               .exists(name => ErrorHandlingMethods(name) && handlerMayObserveSubmarine(t, name)) &&
             protectedEffectArg(t).exists(producedByRaise(_)) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, None))
+        Patch.lint(
+          new MTLSubmarine.SubmarineErrorHandlingDiagnostic(
+            calleeNameTerm(t).getOrElse(t),
+            calleeName(t)
+          )
+        )
 
       // IO direct methods, e.g. `raise.onError { e => ??? }`
-      case t @ Term.Apply.After_4_6_0(sel @ Term.Select(qual, Term.Name(name)), _)
+      case t @ Term.Apply.After_4_6_0(sel @ Term.Select(qual, method @ Term.Name(name)), _)
           if IO_M.matches(sel) &&
             handlerMayObserveSubmarine(t, name) &&
             producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
 
-      case t @ Term.Select(qual, Term.Name(name))
+      case t @ Term.Select(qual, method @ Term.Name(name))
           if IO_M.matches(t) &&
             ParameterlessErrorHandlingMethods(name) &&
             handlerMayObserveSubmarine(t, name) &&
             producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
+        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
     }.asPatch
   }
 
@@ -479,14 +484,17 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case _ => None
     }
 
-  @annotation.tailrec
   private def calleeName(term: Term): Option[String] =
+    calleeNameTerm(term).map(_.value)
+
+  @annotation.tailrec
+  private def calleeNameTerm(term: Term): Option[Term.Name] =
     term match {
-      case Term.Apply.After_4_6_0(fun, _)        => calleeName(fun)
-      case Term.ApplyType.After_4_6_0(fun, _)    => calleeName(fun)
-      case Term.Select(_, Term.Name(methodName)) => Some(methodName)
-      case Term.Name(methodName)                 => Some(methodName)
-      case _                                     => None
+      case Term.Apply.After_4_6_0(fun, _)     => calleeNameTerm(fun)
+      case Term.ApplyType.After_4_6_0(fun, _) => calleeNameTerm(fun)
+      case Term.Select(_, method: Term.Name)  => Some(method)
+      case method: Term.Name                  => Some(method)
+      case _                                  => None
     }
 
 }

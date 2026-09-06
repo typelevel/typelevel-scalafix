@@ -203,10 +203,10 @@ object MTLSubmarineTest {
       (Async[F].unit >>= (_ => methodRaise[F])).attempt        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.mproduct(_ => methodRaise[F]).attempt      // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       Async[F].unit.map(identity).attempt
-      (for { // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (for {
         _ <- Async[F].unit
         _ <- methodRaise[F]
-      } yield ()).attempt.void
+      } yield ()).attempt.void // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     }
 
     def direct[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
@@ -250,14 +250,14 @@ object MTLSubmarineTest {
     }
 
     def matched[F[_]: Async](condition: Boolean)(implicit r: Raise[F, String]): F[Unit] = {
-      (condition match { // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (condition match {
         case true  => Async[F].unit
         case false => methodRaise[F]
-      }).attempt
-      (condition match { // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      }).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      (condition match {
         case true  => methodRaise[F]
         case false => Async[F].unit
-      }).attempt
+      }).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       (condition match {
         case true  => Async[F].unit
         case false => Async[F].unit
@@ -265,10 +265,10 @@ object MTLSubmarineTest {
     }
 
     def blocks[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
-      ({ // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      ({
         Async[F].unit
         methodRaise[F]
-      }).attempt
+      }).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       ({
         methodRaise[F]
         Async[F].unit
