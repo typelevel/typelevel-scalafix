@@ -73,6 +73,20 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     "voidError"
   )
 
+  private val ParameterlessErrorHandlingMethods =
+    Set("attempt", "attemptNarrow", "attemptT", "voidError")
+
+  private val PartialErrorHandlingMethods =
+    Set("adaptErr", "adaptError", "onError", "recover", "recoverWith")
+
+  private val SubmarineClassSupertypes_M =
+    SymbolMatcher.exact("java/lang/RuntimeException#") +
+      SymbolMatcher.exact("java/lang/Exception#") +
+      SymbolMatcher.exact("java/lang/Throwable#") +
+      SymbolMatcher.exact("java/lang/Object#") +
+      SymbolMatcher.exact("scala/Any#") +
+      SymbolMatcher.exact("scala/AnyRef#")
+
   private val Raise_M =
     SymbolMatcher.exact("cats/mtl/Raise#")
 
@@ -103,16 +117,19 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
   override def fix(implicit doc: SemanticDocument): Patch = {
     implicit val localDefinitions: LocalDefinitions = new LocalDefinitions(
-      doc.tree.collect {
-        case d: Defn.Def if d.parent.exists(_.isInstanceOf[Term.Block]) =>
-          List(d.symbol -> d.body)
+      doc.tree
+        .collect {
+          case d: Defn.Def if d.parent.exists(_.isInstanceOf[Term.Block]) =>
+            List(d.symbol -> d.body)
 
-        case d: Defn.Val if d.parent.exists(_.isInstanceOf[Term.Block]) =>
-          d.pats match {
-            case List(p: Pat.Var) => List(p.symbol -> d.rhs)
-            case _                => Nil
-          }
-      }.flatten.toMap
+          case d: Defn.Val if d.parent.exists(_.isInstanceOf[Term.Block]) =>
+            d.pats match {
+              case List(p: Pat.Var) => List(p.symbol -> d.rhs)
+              case _                => Nil
+            }
+        }
+        .flatten
+        .toMap
     )
 
     doc.tree.collect {
@@ -120,31 +137,106 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case t @ Term.Apply.After_4_6_0(Term.Select(qual, Term.Name(name)), _)
           if Syntax_M.matches(t.symbol.owner) &&
             ErrorHandlingMethods(name) &&
+            handlerMayObserveSubmarine(t, name) &&
             producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
 
       // syntax, e.g. `raise.voidError`
       case t @ Term.Select(qual, Term.Name(name))
           if Syntax_M.matches(t.symbol.owner) &&
-            ErrorHandlingMethods(name) &&
+            ParameterlessErrorHandlingMethods(name) &&
+            handlerMayObserveSubmarine(t, name) &&
             producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
 
       // direct, e.g. `Async[F].onError(raise) { e => ??? }`
       case t @ Term.Apply.After_4_6_0(_, _)
           if isOwner(t.symbol, Direct_M) &&
-            calleeName(t).exists(ErrorHandlingMethods) &&
+            calleeName(t)
+              .exists(name => ErrorHandlingMethods(name) && handlerMayObserveSubmarine(t, name)) &&
             protectedEffectArg(t).exists(producedByRaise(_)) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, None))
 
       // IO direct methods, e.g. `raise.onError { e => ??? }`
       case t @ Term.Apply.After_4_6_0(sel @ Term.Select(qual, Term.Name(name)), _)
-          if IO_M.matches(sel) && producedByRaise(qual) =>
+          if IO_M.matches(sel) &&
+            handlerMayObserveSubmarine(t, name) &&
+            producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
 
-      case t @ Term.Select(qual, Term.Name(name)) if IO_M.matches(t) && producedByRaise(qual) =>
+      case t @ Term.Select(qual, Term.Name(name))
+          if IO_M.matches(t) &&
+            ParameterlessErrorHandlingMethods(name) &&
+            handlerMayObserveSubmarine(t, name) &&
+            producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
     }.asPatch
+  }
+
+  private def handlerMayObserveSubmarine(
+    term: Term,
+    method: String
+  )(implicit doc: SemanticDocument): Boolean =
+    if (method == "attemptNarrow")
+      narrowErrorType(term).forall(typePatternMayMatchSubmarine)
+    else if (PartialErrorHandlingMethods(method))
+      partialHandlerArgument(term).exists(partialFunctionMayMatchSubmarine)
+    else true
+
+  private def narrowErrorType(term: Term): Option[Type] = {
+    @annotation.tailrec
+    def fromCall(t: Term): Option[Type] =
+      t match {
+        case Term.Apply.After_4_6_0(fun, _)      => fromCall(fun)
+        case Term.ApplyType.After_4_6_0(_, tpes) => tpes.values.headOption
+        case Term.Select(_, _) | Term.Name(_)    => fromParent(t)
+        case _                                   => None
+      }
+
+    def fromParent(t: Term): Option[Type] =
+      t.parent.collect { case Term.ApplyType.After_4_6_0(_, tpes) =>
+        tpes.values.headOption
+      }.flatten
+
+    fromCall(term)
+  }
+
+  private def partialHandlerArgument(
+    term: Term
+  )(implicit doc: SemanticDocument): Option[Term] =
+    appliedCall(term).flatMap { case (_, _, argumentLists) =>
+      calleeSymbol(term).flatMap { symbol =>
+        if (isOwner(symbol, Direct_M))
+          argumentLists.drop(1).headOption.flatMap(_.headOption)
+        else argumentLists.headOption.flatMap(_.headOption)
+      }
+    }
+
+  private def partialFunctionMayMatchSubmarine(
+    term: Term
+  )(implicit doc: SemanticDocument): Boolean =
+    term match {
+      case Term.PartialFunction(cases) => cases.exists(c => patternMayMatchSubmarine(c.pat))
+      case _                           => true
+    }
+
+  private def patternMayMatchSubmarine(pat: Pat)(implicit doc: SemanticDocument): Boolean =
+    pat match {
+      case Pat.Wildcard()        => true
+      case Pat.Typed(_, tpe)     => typePatternMayMatchSubmarine(tpe)
+      case Pat.Alternative(a, b) => patternMayMatchSubmarine(a) || patternMayMatchSubmarine(b)
+      case Pat.Bind(_, nested)   => patternMayMatchSubmarine(nested)
+      case _: Lit                => false
+      case _                     => true
+    }
+
+  private def typePatternMayMatchSubmarine(
+    tpe: Type
+  )(implicit doc: SemanticDocument): Boolean = {
+    val symbol = tpe.symbol
+
+    SubmarineClassSupertypes_M.matches(symbol) ||
+    doc.info(symbol).forall(info => !info.isClass)
   }
 
   private def producedByRaise(
@@ -159,7 +251,7 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
           .getOrElse(false)
       case Term.If.After_4_4_0(_, thenBranch, elseBranch, _) =>
         producedByRaise(thenBranch, visitedLocalDefinitions) ||
-          producedByRaise(elseBranch, visitedLocalDefinitions)
+        producedByRaise(elseBranch, visitedLocalDefinitions)
       case Term.Match.After_4_9_9(_, cases, _) =>
         cases.exists(c => producedByRaise(c.body, visitedLocalDefinitions))
       case _ =>

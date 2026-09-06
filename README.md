@@ -191,6 +191,12 @@ user-defined wrappers. For example, a call such as `tolerate(raiseError)` is not
 when `tolerate` calls `attempt` internally. Detecting that generally would require
 unrestricted interprocedural analysis.
 
+For partial and narrow handlers, the rule warns only when the handler can match
+`Handle.Submarine`, which extends `RuntimeException`. Wildcards and patterns typed as
+`RuntimeException`, `Exception`, or `Throwable` are reported, while provably disjoint
+concrete classes such as `IOException` are allowed. Unresolved and otherwise uncertain
+patterns are reported conservatively.
+
 For example:
 ```scala
 import cats.effect.IO
