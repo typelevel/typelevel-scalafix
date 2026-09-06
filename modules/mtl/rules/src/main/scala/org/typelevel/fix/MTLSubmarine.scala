@@ -507,14 +507,14 @@ object MTLSubmarine {
   ) extends Diagnostic {
 
     override def message: String = {
-      val suchAs = method.fold("")(m => s", such as `$m`,")
-      s"Avoid calling error-handling methods$suchAs " +
+      val operation = method.fold("error-handling methods")(m => s"the error-handling method `$m`")
+      s"Avoid calling $operation " +
         s"on expressions that require `cats.mtl.Raise[F, *]`. " +
-        s"Errors raised through `Raise` represented by a traceless exception type `cats.mtl.Handle#Submarine`. " +
-        s"Handling them with `ApplicativeError`, `MonadError`, or `IO` error-handling " +
-        s"methods is not always desirable. " +
+        s"Errors raised through `Raise` may be represented by the traceless " +
+        s"`cats.mtl.Handle.Submarine` exception. Handling that exception with " +
+        s"`ApplicativeError`, `MonadError`, or `IO` can bypass marker-aware typed error handling. " +
         s"Use `cats.mtl.Handle[F, *].handle` or `cats.mtl.Handle[F, *].handleWith` " +
-        s"to manage these cases explicitly."
+        s"instead."
     }
 
     def position: Position = tree.pos

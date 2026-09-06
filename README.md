@@ -182,7 +182,7 @@ See https://typelevel.org/blog/2025/09/02/custom-error-types.html.
 
 This rule reports supported error-handling methods (`handleError`, `recover`, `onError`,
 etc.) on expressions it identifies as `cats.mtl.Raise[F, E]`-capable. `Raise` provided
-by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle#Submarine`, so
+by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle.Submarine`, so
 handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is
 not always desirable.
 
