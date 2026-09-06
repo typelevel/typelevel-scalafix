@@ -228,7 +228,7 @@ For example:
 import cats.effect.IO
 import cats.mtl.{Raise, Handle}
 
-def raiseError: Raise[IO, String] ?=> IO[Unit] = r =>
+def raiseError: Raise[IO, String] ?=> IO[Unit] = r ?=>
   r.raise("boom")
 
 def standardError: IO[Unit] =
@@ -238,7 +238,7 @@ Handle.allow[String] {
   for {
     _ <- raiseError.onError(e => IO.println("Error: " + e)) // forbidden
     _ <- standardError.onError(e => IO.println("Error: " + e)) // allowed
-  } yield 
+  } yield ()
 }
 ```
 
