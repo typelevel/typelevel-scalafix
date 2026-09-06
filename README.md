@@ -193,6 +193,12 @@ the underlying error directly and does not use `Handle.Submarine`. This conserva
 boundary keeps the rule consistent across methods and source modules, where instance
 provenance is not reliably available.
 
+Inside `Handle.allow`, prefer `Handle.handle` or `Handle.handleWith`. The active
+`Handle` associates each raised value with a private marker and recognizes only
+`Handle.Submarine` failures carrying that same marker. Other throwables—including
+submarines belonging to a different `Handle.allow` boundary—propagate unchanged, so
+typed error handling does not become general throwable handling.
+
 The rule recognizes supported Cats and `IO` error-handling operations at their call
 sites. It cannot reliably discover the same operations hidden inside arbitrary
 user-defined wrappers. For example, a call such as `tolerate(raiseError)` is not reported
