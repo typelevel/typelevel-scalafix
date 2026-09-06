@@ -22,6 +22,8 @@ import scala.meta._
 
 class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
+  private final class LocalMethodBodies(val bySymbol: Map[Symbol, Term])
+
   private val Syntax_M =
     SymbolMatcher.exact("cats/syntax/ApplicativeErrorOps#") +
       SymbolMatcher.exact("cats/syntax/ApplicativeErrorFUnitOps#") +
@@ -99,7 +101,14 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       SymbolMatcher.normalized("cats/effect/IO#voidError().") +
       SymbolMatcher.normalized("cats/effect/IO#attemptTap().")
 
-  override def fix(implicit doc: SemanticDocument): Patch =
+  override def fix(implicit doc: SemanticDocument): Patch = {
+    implicit val localMethodBodies: LocalMethodBodies = new LocalMethodBodies(
+      doc.tree.collect {
+        case d: Defn.Def if d.parent.exists(_.isInstanceOf[Term.Block]) =>
+          d.symbol -> d.body
+      }.toMap
+    )
+
     doc.tree.collect {
       // syntax, e.g. `raise.onError { e => ??? }`
       case t @ Term.Apply.After_4_6_0(Term.Select(qual, Term.Name(name)), _)
@@ -119,7 +128,7 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case t @ Term.Apply.After_4_6_0(_, _)
           if isOwner(t.symbol, Direct_M) &&
             calleeName(t).exists(ErrorHandlingMethods) &&
-            protectedEffectArg(t).exists(producedByRaise) =>
+            protectedEffectArg(t).exists(producedByRaise(_)) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, None))
 
       // IO direct methods, e.g. `raise.onError { e => ??? }`
@@ -130,27 +139,49 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case t @ Term.Select(qual, Term.Name(name)) if IO_M.matches(t) && producedByRaise(qual) =>
         Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(t, Some(name)))
     }.asPatch
+  }
 
-  private def producedByRaise(term: Term)(implicit doc: SemanticDocument): Boolean =
+  private def producedByRaise(
+    term: Term,
+    visitedLocalMethods: Set[Symbol] = Set.empty
+  )(implicit doc: SemanticDocument, localMethodBodies: LocalMethodBodies): Boolean =
     term match {
-      case Term.Ascribe(expr, _) => producedByRaise(expr)
+      case Term.Ascribe(expr, _) => producedByRaise(expr, visitedLocalMethods)
       case Term.Block(stats) =>
-        stats.lastOption.collect { case result: Term => producedByRaise(result) }.getOrElse(false)
+        stats.lastOption
+          .collect { case result: Term => producedByRaise(result, visitedLocalMethods) }
+          .getOrElse(false)
       case Term.If.After_4_4_0(_, thenBranch, elseBranch, _) =>
-        producedByRaise(thenBranch) || producedByRaise(elseBranch)
+        producedByRaise(thenBranch, visitedLocalMethods) ||
+          producedByRaise(elseBranch, visitedLocalMethods)
       case Term.Match.After_4_9_9(_, cases, _) =>
-        cases.exists(c => producedByRaise(c.body))
+        cases.exists(c => producedByRaise(c.body, visitedLocalMethods))
       case _ =>
         methodRequiresImplicitRaise(term) ||
         originatesFromRaiseOperation(term) ||
-        originatesFromPropagation(term) ||
-        originatesFromForComprehension(term)
+        originatesFromLocalMethod(term, visitedLocalMethods) ||
+        originatesFromPropagation(term, visitedLocalMethods) ||
+        originatesFromForComprehension(term, visitedLocalMethods)
+    }
+
+  private def originatesFromLocalMethod(
+    term: Term,
+    visitedLocalMethods: Set[Symbol]
+  )(implicit doc: SemanticDocument, localMethodBodies: LocalMethodBodies): Boolean =
+    calleeSymbol(term).exists { symbol =>
+      !visitedLocalMethods(symbol) &&
+      localMethodBodies.bySymbol
+        .get(symbol)
+        .exists(producedByRaise(_, visitedLocalMethods + symbol))
     }
 
   private def originatesFromRaiseOperation(term: Term)(implicit doc: SemanticDocument) =
     calleeSymbol(term).exists(sym => isOwner(sym, RaiseAll_M))
 
-  private def originatesFromPropagation(term: Term)(implicit doc: SemanticDocument): Boolean =
+  private def originatesFromPropagation(
+    term: Term,
+    visitedLocalMethods: Set[Symbol]
+  )(implicit doc: SemanticDocument, localMethodBodies: LocalMethodBodies): Boolean =
     appliedCall(term).exists { case (receiver, method, argumentLists) =>
       calleeSymbol(term).exists { symbol =>
         val isCatsOperation = symbol.value.startsWith("cats/")
@@ -160,33 +191,39 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
         if (!isCatsOperation) false
         else if (UnaryPropagationMethods(method)) {
           val source = if (isDirect) firstArguments.headOption else Some(receiver)
-          source.exists(producedByRaise)
+          source.exists(producedByRaise(_, visitedLocalMethods))
         } else if (BinaryPropagationMethods(method)) {
           val sources = if (isDirect) firstArguments.take(2) else receiver :: firstArguments.take(1)
-          sources.exists(producedByRaise)
+          sources.exists(producedByRaise(_, visitedLocalMethods))
         } else if (FlatMapPropagationMethods(method)) {
           val source = if (isDirect) firstArguments.headOption else Some(receiver)
           val callback =
             if (isDirect) argumentLists.drop(1).headOption.flatMap(_.headOption)
             else firstArguments.headOption
 
-          source.exists(producedByRaise) || callback.exists(callbackProducesRaise)
+          source.exists(producedByRaise(_, visitedLocalMethods)) ||
+          callback.exists(callbackProducesRaise(_, visitedLocalMethods))
         } else false
       }
     }
 
-  private def callbackProducesRaise(term: Term)(implicit doc: SemanticDocument): Boolean =
+  private def callbackProducesRaise(
+    term: Term,
+    visitedLocalMethods: Set[Symbol]
+  )(implicit doc: SemanticDocument, localMethodBodies: LocalMethodBodies): Boolean =
     term match {
-      case Term.Function.After_4_6_0(_, body: Term) => producedByRaise(body)
-      case other                                    => producedByRaise(other)
+      case Term.Function.After_4_6_0(_, body: Term) =>
+        producedByRaise(body, visitedLocalMethods)
+      case other => producedByRaise(other, visitedLocalMethods)
     }
 
   private def originatesFromForComprehension(
-    term: Term
-  )(implicit doc: SemanticDocument): Boolean = {
+    term: Term,
+    visitedLocalMethods: Set[Symbol]
+  )(implicit doc: SemanticDocument, localMethodBodies: LocalMethodBodies): Boolean = {
     def generatorsProduceRaise(enumerators: List[Enumerator]): Boolean =
       enumerators.exists {
-        case Enumerator.Generator(_, rhs) => producedByRaise(rhs)
+        case Enumerator.Generator(_, rhs) => producedByRaise(rhs, visitedLocalMethods)
         case _                            => false
       }
 
