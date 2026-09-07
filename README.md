@@ -15,18 +15,18 @@ Then you can add the *typelevel-scalafix* rules to your sbt project using the `s
 
 ```scala
 // To add all Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.6.0"
 
 // To add only cats Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.6.0"
 // To add only cats-effect Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.6.0"
 // To add only cats-mtl Scalafix rules
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-mtl" % "0.6.0"
 // To add only fs2 Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.6.0"
 // To add only http4s Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-http4s" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-http4s" % "0.6.0"
 ```
 
 ## Usage
@@ -178,52 +178,25 @@ This rule works on variable declarations, usaged within methods as well as for c
 
 ### TypelevelMTLSubmarine
 
-See https://typelevel.org/blog/2025/09/02/custom-error-types.html.
+This rule reports Cats and `IO` error handlers used on expressions that require
+`cats.mtl.Raise[F, E]`. When `Raise` comes from `Handle.allow`, raised values travel as
+traceless `Handle.Submarine` exceptions. A general error handler can catch one before
+`Handle` sees it.
 
-This rule reports supported error-handling methods (`handleError`, `recover`, `onError`,
-etc.) on expressions it identifies as `cats.mtl.Raise[F, E]`-capable. `Raise` provided
-by `Handle.allow` uses a traceless exception type called `cats.mtl.Handle.Submarine`, so
-handling it through `ApplicativeError`, `MonadError`, or `IO` error-handling methods is
-not always desirable.
+The rule covers Cats typeclass methods and syntax, plus concrete `IO` methods. It does
+not follow user-defined wrappers or constructors such as `Stream.eval`, and it does not
+match concrete `SyncIO` or `fs2.Stream` handlers. `Raise` and `Handle` aliases are
+supported; user-defined subtypes are not.
 
-Detection is intentionally based on the declared `Raise` capability rather than the
-specific instance selected at a call site. Consequently, the rule may also report code
-where `Raise` is satisfied by an ordinary `ApplicativeError`-backed `Handle` which raises
-the underlying error directly and does not use `Handle.Submarine`. This conservative
-boundary keeps the rule consistent across methods and source modules, where instance
-provenance is not reliably available.
+Partial and narrow handlers are reported when they can match `Handle.Submarine`, a
+`RuntimeException`. This includes wildcards and the standard exception supertypes, but
+not disjoint types such as `IOException`. Unknown patterns are reported.
 
-Inside `Handle.allow`, prefer `Handle.handle` or `Handle.handleWith`. The active
-`Handle` associates each raised value with a private marker and recognizes only
-`Handle.Submarine` failures carrying that same marker. Other throwables—including
-submarines belonging to a different `Handle.allow` boundary—propagate unchanged, so
-typed error handling does not become general throwable handling.
+Scala 2.13 and Scala 3 are supported. Scala 3 also supports context-function values such
+as `Raise[F, E] ?=> F[A]`.
 
-The rule recognizes supported Cats and `IO` error-handling operations at their call
-sites. It cannot reliably discover the same operations hidden inside arbitrary
-user-defined wrappers. For example, a call such as `tolerate(raiseError)` is not reported
-when `tolerate` calls `attempt` internally. Detecting that generally would require
-unrestricted interprocedural analysis.
+Example:
 
-Concrete member matching is limited to `IO`. Direct error-handling members on `SyncIO`
-and other effects such as `fs2.Stream` are not recognized, and provenance is not traced
-through constructors such as `Stream.eval`. Cats typeclass methods and extension syntax
-remain supported when the protected expression's provenance is otherwise visible. Type
-aliases of `Raise` and `Handle` are supported, but arbitrary user-defined subtypes are
-not inferred as capabilities.
-
-For partial and narrow handlers, the rule warns only when the handler can match
-`Handle.Submarine`, which extends `RuntimeException`. Wildcards and patterns typed as
-`RuntimeException`, `Exception`, or `Throwable` are reported, while provably disjoint
-concrete classes such as `IOException` are allowed. Unresolved and otherwise uncertain
-patterns are reported conservatively.
-
-The supported behavior is consistent across Scala 2.13 and Scala 3 for constructs
-available in both versions. Scala 3 additionally supports capabilities represented as
-context-function methods or values, such as `Raise[F, E] ?=> F[A]`; Scala 2.13 has no
-equivalent language representation.
-
-For example:
 ```scala
 import cats.effect.IO
 import cats.mtl.{Raise, Handle}
@@ -236,8 +209,8 @@ def standardError: IO[Unit] =
 
 Handle.allow[String] {
   for {
-    _ <- raiseError.onError(e => IO.println("Error: " + e)) // forbidden
-    _ <- standardError.onError(e => IO.println("Error: " + e)) // allowed
+    _ <- raiseError.onError(e => IO.println("Error: " + e)) // reported
+    _ <- standardError.onError(e => IO.println("Error: " + e)) // not reported
   } yield ()
 }
 ```
