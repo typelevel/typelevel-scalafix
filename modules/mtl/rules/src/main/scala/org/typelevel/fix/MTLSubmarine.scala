@@ -24,6 +24,23 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
   private final class LocalDefinitions(val bySymbol: Map[Symbol, Term])
 
+  private final class Call(
+    val receiver: Option[Term],
+    val method: Term.Name,
+    val argumentLists: List[List[Term]],
+    val typeArguments: List[Type],
+    val callee: Term
+  ) {
+    def name: String                                   = method.value
+    def symbol(implicit doc: SemanticDocument): Symbol = method.symbol
+  }
+
+  private final class HandlerCall(
+    val call: Call,
+    val protectedEffect: Term,
+    val handler: Option[Term]
+  )
+
   private val Syntax_M =
     SymbolMatcher.exact("cats/syntax/ApplicativeErrorOps#") +
       SymbolMatcher.exact("cats/syntax/ApplicativeErrorFUnitOps#") +
@@ -134,90 +151,43 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
         .toMap
     )
 
-    doc.tree.collect {
-      // syntax, e.g. `raise.onError { e => ??? }`
-      case t @ Term.Apply.After_4_6_0(Term.Select(qual, method @ Term.Name(name)), _)
-          if Syntax_M.matches(t.symbol.owner) &&
-            ErrorHandlingMethods(name) &&
-            handlerMayObserveSubmarine(t, name) &&
-            producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
-
-      // syntax, e.g. `raise.voidError`
-      case t @ Term.Select(qual, method @ Term.Name(name))
-          if Syntax_M.matches(t.symbol.owner) &&
-            ParameterlessErrorHandlingMethods(name) &&
-            handlerMayObserveSubmarine(t, name) &&
-            producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
-
-      // direct, e.g. `Async[F].onError(raise) { e => ??? }`
-      case t @ Term.Apply.After_4_6_0(_, _)
-          if isOwner(t.symbol, Direct_M) &&
-            calleeName(t)
-              .exists(name => ErrorHandlingMethods(name) && handlerMayObserveSubmarine(t, name)) &&
-            protectedEffectArg(t).exists(producedByRaise(_)) =>
-        Patch.lint(
-          new MTLSubmarine.SubmarineErrorHandlingDiagnostic(
-            calleeNameTerm(t).getOrElse(t),
-            calleeName(t)
+    def diagnostic(term: Term): Option[Patch] =
+      handlerCall(term)
+        .filter(handlerMayObserveSubmarine)
+        .filter(call => producedByRaise(call.protectedEffect))
+        .map { handlerCall =>
+          val call = handlerCall.call
+          Patch.lint(
+            new MTLSubmarine.SubmarineErrorHandlingDiagnostic(call.method, Some(call.name))
           )
-        )
+        }
 
-      // IO direct methods, e.g. `raise.onError { e => ??? }`
-      case t @ Term.Apply.After_4_6_0(sel @ Term.Select(qual, method @ Term.Name(name)), _)
-          if IO_M.matches(sel) &&
-            handlerMayObserveSubmarine(t, name) &&
-            producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
-
-      case t @ Term.Select(qual, method @ Term.Name(name))
-          if IO_M.matches(t) &&
-            ParameterlessErrorHandlingMethods(name) &&
-            handlerMayObserveSubmarine(t, name) &&
-            producedByRaise(qual) =>
-        Patch.lint(new MTLSubmarine.SubmarineErrorHandlingDiagnostic(method, Some(name)))
-    }.asPatch
+    doc.tree
+      .collect {
+        case t: Term.Apply => diagnostic(t)
+        case t: Term.ApplyType
+            if normalizedCall(t).exists(call => ParameterlessErrorHandlingMethods(call.name)) =>
+          diagnostic(t)
+        case t: Term.Select
+            if !t.parent.exists(_.isInstanceOf[Term.ApplyType]) &&
+              normalizedCall(t).exists(call => ParameterlessErrorHandlingMethods(call.name)) =>
+          diagnostic(t)
+      }
+      .flatten
+      .asPatch
   }
 
   private def handlerMayObserveSubmarine(
-    term: Term,
-    method: String
+    handlerCall: HandlerCall
   )(implicit doc: SemanticDocument): Boolean =
-    if (method == "attemptNarrow")
-      narrowErrorType(term).forall(typePatternMayMatchSubmarine)
-    else if (PartialErrorHandlingMethods(method))
-      partialHandlerArgument(term).exists(partialFunctionMayMatchSubmarine)
+    if (handlerCall.call.name == "attemptNarrow")
+      narrowErrorType(handlerCall.call).forall(typePatternMayMatchSubmarine)
+    else if (PartialErrorHandlingMethods(handlerCall.call.name))
+      handlerCall.handler.exists(partialFunctionMayMatchSubmarine)
     else true
 
-  private def narrowErrorType(term: Term): Option[Type] = {
-    @annotation.tailrec
-    def fromCall(t: Term): Option[Type] =
-      t match {
-        case Term.Apply.After_4_6_0(fun, _)      => fromCall(fun)
-        case Term.ApplyType.After_4_6_0(_, tpes) => tpes.values.headOption
-        case Term.Select(_, _) | Term.Name(_)    => fromParent(t)
-        case _                                   => None
-      }
-
-    def fromParent(t: Term): Option[Type] =
-      t.parent.collect { case Term.ApplyType.After_4_6_0(_, tpes) =>
-        tpes.values.headOption
-      }.flatten
-
-    fromCall(term)
-  }
-
-  private def partialHandlerArgument(
-    term: Term
-  )(implicit doc: SemanticDocument): Option[Term] =
-    appliedCall(term).flatMap { case (_, _, argumentLists) =>
-      calleeSymbol(term).flatMap { symbol =>
-        if (isOwner(symbol, Direct_M))
-          argumentLists.drop(1).headOption.flatMap(_.headOption)
-        else argumentLists.headOption.flatMap(_.headOption)
-      }
-    }
+  private def narrowErrorType(call: Call): Option[Type] =
+    call.typeArguments.headOption
 
   private def partialFunctionMayMatchSubmarine(
     term: Term
@@ -262,48 +232,50 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
       case Term.Match.After_4_9_9(_, cases, _) =>
         cases.exists(c => producedByRaise(c.body, visitedLocalDefinitions))
       case _ =>
-        methodRequiresImplicitRaise(term) ||
-        originatesFromRaiseOperation(term) ||
-        originatesFromLocalDefinition(term, visitedLocalDefinitions) ||
-        originatesFromPropagation(term, visitedLocalDefinitions) ||
+        val call = normalizedCall(term)
+        methodRequiresImplicitRaise(call) ||
+        originatesFromRaiseOperation(call) ||
+        originatesFromLocalDefinition(call, visitedLocalDefinitions) ||
+        originatesFromPropagation(call, visitedLocalDefinitions) ||
         originatesFromForComprehension(term, visitedLocalDefinitions)
     }
 
   private def originatesFromLocalDefinition(
-    term: Term,
+    call: Option[Call],
     visitedLocalDefinitions: Set[Symbol]
   )(implicit doc: SemanticDocument, localDefinitions: LocalDefinitions): Boolean =
-    calleeSymbol(term).exists { symbol =>
+    call.exists { call =>
+      val symbol = call.symbol
       !visitedLocalDefinitions(symbol) &&
       localDefinitions.bySymbol
         .get(symbol)
         .exists(producedByRaise(_, visitedLocalDefinitions + symbol))
     }
 
-  private def originatesFromRaiseOperation(term: Term)(implicit doc: SemanticDocument) =
-    calleeSymbol(term).exists(sym => isOwner(sym, RaiseAll_M))
+  private def originatesFromRaiseOperation(call: Option[Call])(implicit doc: SemanticDocument) =
+    call.exists(call => isOwner(call.symbol, RaiseAll_M))
 
   private def originatesFromPropagation(
-    term: Term,
+    call: Option[Call],
     visitedLocalDefinitions: Set[Symbol]
   )(implicit doc: SemanticDocument, localDefinitions: LocalDefinitions): Boolean =
-    appliedCall(term).exists { case (receiver, method, argumentLists) =>
-      calleeSymbol(term).exists { symbol =>
-        val isCatsOperation = symbol.value.startsWith("cats/")
-        val isDirect        = isOwner(symbol, PropagationDirect_M)
-        val firstArguments  = argumentLists.headOption.getOrElse(Nil)
+    call.exists { call =>
+      call.receiver.exists { receiver =>
+        val isCatsOperation = call.symbol.value.startsWith("cats/")
+        val isDirect        = isOwner(call.symbol, PropagationDirect_M)
+        val firstArguments  = call.argumentLists.headOption.getOrElse(Nil)
 
         if (!isCatsOperation) false
-        else if (UnaryPropagationMethods(method)) {
+        else if (UnaryPropagationMethods(call.name)) {
           val source = if (isDirect) firstArguments.headOption else Some(receiver)
           source.exists(producedByRaise(_, visitedLocalDefinitions))
-        } else if (BinaryPropagationMethods(method)) {
+        } else if (BinaryPropagationMethods(call.name)) {
           val sources = if (isDirect) firstArguments.take(2) else receiver :: firstArguments.take(1)
           sources.exists(producedByRaise(_, visitedLocalDefinitions))
-        } else if (FlatMapPropagationMethods(method)) {
+        } else if (FlatMapPropagationMethods(call.name)) {
           val source = if (isDirect) firstArguments.headOption else Some(receiver)
           val callback =
-            if (isDirect) argumentLists.drop(1).headOption.flatMap(_.headOption)
+            if (isDirect) call.argumentLists.drop(1).headOption.flatMap(_.headOption)
             else firstArguments.headOption
 
           source.exists(producedByRaise(_, visitedLocalDefinitions)) ||
@@ -339,44 +311,55 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     }
   }
 
-  private def appliedCall(term: Term): Option[(Term, String, List[List[Term]])] = {
+  private def handlerCall(term: Term)(implicit doc: SemanticDocument): Option[HandlerCall] =
+    normalizedCall(term)
+      .filter(call => ErrorHandlingMethods(call.name))
+      .flatMap { call =>
+        val isDirect = isOwner(call.symbol, Direct_M)
+        val isSyntax = Syntax_M.matches(call.symbol.owner)
+        val isIO     = IO_M.matches(call.callee)
+
+        if (isDirect)
+          call.argumentLists.headOption.flatMap(_.headOption).map { protectedEffect =>
+            val handler = call.argumentLists.drop(1).headOption.flatMap(_.headOption)
+            new HandlerCall(call, protectedEffect, handler)
+          }
+        else if (isSyntax || isIO)
+          call.receiver.map { protectedEffect =>
+            val handler = call.argumentLists.headOption.flatMap(_.headOption)
+            new HandlerCall(call, protectedEffect, handler)
+          }
+        else None
+      }
+
+  private def normalizedCall(term: Term): Option[Call] = {
     @annotation.tailrec
-    def loop(t: Term, argumentLists: List[List[Term]]): Option[(Term, String, List[List[Term]])] =
+    def loop(
+      t: Term,
+      argumentLists: List[List[Term]],
+      typeArguments: List[Type]
+    ): Option[Call] =
       t match {
         case Term.Apply.After_4_6_0(fun, args) =>
-          loop(fun, args :: argumentLists)
+          loop(fun, args :: argumentLists, typeArguments)
 
-        case Term.ApplyType.After_4_6_0(fun, _) =>
-          loop(fun, argumentLists)
+        case Term.ApplyType.After_4_6_0(fun, tpes) =>
+          loop(fun, argumentLists, tpes.values.toList ::: typeArguments)
 
-        case Term.ApplyInfix.Initial(receiver, Term.Name(method), _, args) =>
-          Some((receiver, method, List(args)))
+        case Term.ApplyInfix.Initial(receiver, method: Term.Name, _, args) =>
+          Some(new Call(Some(receiver), method, List(args), typeArguments, method))
 
-        case Term.Select(receiver, Term.Name(method)) =>
-          Some((receiver, method, argumentLists))
+        case select @ Term.Select(receiver, method: Term.Name) =>
+          Some(new Call(Some(receiver), method, argumentLists, typeArguments, select))
+
+        case method: Term.Name =>
+          Some(new Call(None, method, argumentLists, typeArguments, method))
 
         case _ =>
           None
       }
 
-    loop(term, Nil)
-  }
-
-  private def protectedEffectArg(term: Term): Option[Term] = {
-    @annotation.tailrec
-    def loop(t: Term, candidate: Option[Term]): Option[Term] =
-      t match {
-        case Term.Apply.After_4_6_0(fun, args) =>
-          loop(fun, args.headOption.orElse(candidate))
-
-        case Term.ApplyType.After_4_6_0(fun, _) =>
-          loop(fun, candidate)
-
-        case _ =>
-          candidate
-      }
-
-    loop(term, None)
+    loop(term, Nil, Nil)
   }
 
   private def isOwner(sym: Symbol, matcher: SymbolMatcher): Boolean = {
@@ -391,8 +374,10 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
     loop(sym)
   }
 
-  private def methodRequiresImplicitRaise(qual: Term)(implicit doc: SemanticDocument): Boolean =
-    calleeSymbol(qual).flatMap(sym => doc.info(sym)).exists { info =>
+  private def methodRequiresImplicitRaise(
+    call: Option[Call]
+  )(implicit doc: SemanticDocument): Boolean =
+    call.flatMap(call => doc.info(call.symbol)).exists { info =>
       info.signature match {
         case m: MethodSignature =>
           requiresRaiseViaParams(m) || requiresRaiseViaContextFunction(m)
@@ -465,38 +450,6 @@ class MTLSubmarine extends SemanticRule("TypelevelMTLSubmarine") {
 
       case _ =>
         false
-    }
-
-  private def calleeSymbol(term: Term)(implicit doc: SemanticDocument): Option[Symbol] =
-    term match {
-      case Term.Apply.After_4_6_0(fun, _)       => calleeSymbol(fun)
-      case Term.ApplyType.After_4_6_0(fun, _)   => calleeSymbol(fun)
-      case Term.ApplyInfix.Initial(_, op, _, _) => Some(op.symbol)
-      case Term.Select(_, n)                    => Some(n.symbol)
-      case n: Term.Name                         => Some(n.symbol)
-      case Term.Block(stats) =>
-        stats.lastOption.collect { case t: Term => t }.flatMap(calleeSymbol)
-
-      case Term.If.After_4_4_0(_, thn, els, _) =>
-        calleeSymbol(thn).orElse(calleeSymbol(els))
-
-      case Term.Match.After_4_9_9(_, cases, _) =>
-        cases.view.flatMap(c => calleeSymbol(c.body)).headOption
-
-      case _ => None
-    }
-
-  private def calleeName(term: Term): Option[String] =
-    calleeNameTerm(term).map(_.value)
-
-  @annotation.tailrec
-  private def calleeNameTerm(term: Term): Option[Term.Name] =
-    term match {
-      case Term.Apply.After_4_6_0(fun, _)     => calleeNameTerm(fun)
-      case Term.ApplyType.After_4_6_0(fun, _) => calleeNameTerm(fun)
-      case Term.Select(_, method: Term.Name)  => Some(method)
-      case method: Term.Name                  => Some(method)
-      case _                                  => None
     }
 
 }
