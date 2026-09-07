@@ -6,7 +6,6 @@ package fix
 import cats.mtl._
 import cats.effect._
 
-
 // scalafmt: { maxColumn = 160 }
 object LocalValueCapture {
 

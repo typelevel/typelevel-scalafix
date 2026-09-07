@@ -26,7 +26,7 @@ object HandleAllowF {
 
   def dangerousGeneric[F[_]: Async] = Handle.allowF[F, String] { implicit h =>
     for {
-      _ <- methodRaise[F].attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      _ <- methodRaise[F].attempt                            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       _ <- Async[F].recover(methodRaise[F]) { case _ => () } // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
       _ <- methodRaise[F].ensure(new Exception(""))(_ => false)
       _ <- methodRaise[F].void

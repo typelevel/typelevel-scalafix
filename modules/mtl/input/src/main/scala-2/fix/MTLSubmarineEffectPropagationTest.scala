@@ -8,7 +8,6 @@ import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
 
-
 // scalafmt: { maxColumn = 160 }
 object EffectPropagation {
 
@@ -31,14 +30,15 @@ object EffectPropagation {
     methodRaise[F].fproductLeft(identity).attempt            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     methodRaise[F].tupleLeft(()).attempt                     // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     methodRaise[F].tupleRight(()).attempt                    // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-    methodRaise[F].as((_: Unit) => ())
+    methodRaise[F]
+      .as((_: Unit) => ())
       .<&>(Async[F].unit)
-      .attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-    methodRaise[F].flatMap(_ => Async[F].unit).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-    Async[F].unit.flatMap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-    Async[F].unit.flatTap(_ => methodRaise[F]).attempt       // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-    (Async[F].unit >>= (_ => methodRaise[F])).attempt        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
-    Async[F].unit.mproduct(_ => methodRaise[F]).attempt      // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+      .attempt                                          // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    methodRaise[F].flatMap(_ => Async[F].unit).attempt  // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    Async[F].unit.flatMap(_ => methodRaise[F]).attempt  // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    Async[F].unit.flatTap(_ => methodRaise[F]).attempt  // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    (Async[F].unit >>= (_ => methodRaise[F])).attempt   // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    Async[F].unit.mproduct(_ => methodRaise[F]).attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     Async[F].unit.map(identity).attempt
     (for {
       _ <- Async[F].unit

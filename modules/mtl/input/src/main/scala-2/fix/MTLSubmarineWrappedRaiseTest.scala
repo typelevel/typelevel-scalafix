@@ -7,7 +7,6 @@ import cats.mtl._
 import cats.effect._
 import cats.syntax.all._
 
-
 // scalafmt: { maxColumn = 160 }
 object WrappedRaise {
 

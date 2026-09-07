@@ -12,7 +12,7 @@ import cats.syntax.all._
 object RaiseSyntax {
 
   def generic[F[_]: Async](implicit r: Raise[F, String]): F[Unit] = {
-    "".raise[F, Unit].attempt // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
+    "".raise[F, Unit].attempt                        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     Async[F].handleError("".raise[F, Unit])(_ => ()) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     "".raise[F, Unit].void
   }
