@@ -24,6 +24,13 @@ object HandleAllowF {
     } yield ()
   }
 
+  def attemptedGeneric[F[_]: Async]: F[Either[String, Unit]] =
+    Handle
+      .allowF[F, String] { implicit h =>
+        methodRaise[F]
+      }
+      .attempt
+
   def dangerousGeneric[F[_]: Async] = Handle.allowF[F, String] { implicit h =>
     for {
       _ <- methodRaise[F].attempt                            // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling

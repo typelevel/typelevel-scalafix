@@ -7,7 +7,7 @@ lazy val CatsVersion       = "2.12.0"
 lazy val CatsEffectVersion = "3.6.3"
 lazy val Fs2Version        = "3.12.2"
 lazy val Http4sVersion     = "0.23.32"
-lazy val MtlVersion        = "1.6.0"
+lazy val MtlVersion        = "1.7.0"
 
 ThisBuild / startYear := Some(2022)
 ThisBuild / developers ++= List(

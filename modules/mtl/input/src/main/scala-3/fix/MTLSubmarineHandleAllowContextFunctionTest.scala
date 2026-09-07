@@ -20,6 +20,13 @@ object HandleAllowContextFunction {
     method[F].attempt
   }
 
+  def attemptedGeneric[F[_]: Async]: F[Either[String, Unit]] =
+    Handle
+      .allow[String] {
+        methodRaise[F]
+      }
+      .attempt
+
   def dangerousGeneric[F[_]: Async] = Handle.allow[String] {
     methodRaise[F].attempt                        // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
     Async[F].handleError(methodRaise[F])(_ => ()) // assert: TypelevelMTLSubmarine.mtlSubmarineErrorHandling
