@@ -15,16 +15,18 @@ Then you can add the *typelevel-scalafix* rules to your sbt project using the `s
 
 ```scala
 // To add all Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.6.0"
 
 // To add only cats Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats" % "0.6.0"
 // To add only cats-effect Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-cats-effect" % "0.6.0"
+// To add only cats-mtl Scalafix rules
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-mtl" % "0.6.0"
 // To add only fs2 Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-fs2" % "0.6.0"
 // To add only http4s Scalafix rules
-ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-http4s" % "0.2.0"
+ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix-http4s" % "0.6.0"
 ```
 
 ## Usage
@@ -41,6 +43,7 @@ rules = [
   TypelevelFs2SyncCompiler
   TypelevelHttp4sLiteralsSyntax
   TypelevelIORandomUUID
+  TypelevelMTLSubmarine
 ]
 ```
 
@@ -62,6 +65,7 @@ Not all rules function with Scala 3 yet.
 | TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
 | TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
 | TypelevelHttp4sLiteralsSyntax   | :white_check_mark: | :white_check_mark: |
+| TypelevelMTLSubmarine           | :white_check_mark: | :white_check_mark: |
 
 ## Rules for cats
 
@@ -169,6 +173,47 @@ val test = IO.randomUUID
 ```
 
 This rule works on variable declarations, usaged within methods as well as for comprehensions.
+
+## Rules for cats-mtl
+
+### TypelevelMTLSubmarine
+
+This rule reports Cats and `IO` error handlers used on expressions that require
+`cats.mtl.Raise[F, E]`. When `Raise` comes from `Handle.allow`, raised values travel as
+traceless `Handle.Submarine` exceptions. A general error handler can catch one before
+`Handle` sees it.
+
+The rule covers Cats typeclass methods and syntax, plus concrete `IO` methods. It does
+not follow user-defined wrappers or constructors such as `Stream.eval`, and it does not
+match concrete `SyncIO` or `fs2.Stream` handlers. `Raise` and `Handle` aliases are
+supported; user-defined subtypes are not.
+
+Partial and narrow handlers are reported when they can match `Handle.Submarine`, a
+`RuntimeException`. This includes wildcards and the standard exception supertypes, but
+not disjoint types such as `IOException`. Unknown patterns are reported.
+
+Scala 2.13 and Scala 3 are supported. Scala 3 also supports context-function values such
+as `Raise[F, E] ?=> F[A]`.
+
+Example:
+
+```scala
+import cats.effect.IO
+import cats.mtl.{Raise, Handle}
+
+def raiseError: Raise[IO, String] ?=> IO[Unit] = r ?=>
+  r.raise("boom")
+
+def standardError: IO[Unit] =
+  IO.raiseError(new RuntimeException("boom"))
+
+Handle.allow[String] {
+  for {
+    _ <- raiseError.onError(e => IO.println("Error: " + e)) // reported
+    _ <- standardError.onError(e => IO.println("Error: " + e)) // not reported
+  } yield ()
+}
+```
 
 ## Rules for fs2
 

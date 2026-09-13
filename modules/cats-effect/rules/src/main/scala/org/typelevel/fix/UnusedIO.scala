@@ -51,17 +51,15 @@ class UnusedIO extends SemanticRule("TypelevelUnusedIO") {
           checkSignature(outer, ref)
         case Term.ApplyInfix.Initial(_, op, _, _) =>
           checkSignature(outer, op)
-        case Term.Apply.Initial(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
+        case Term.Apply.After_4_6_0(fn @ Term.Name(_), _) if IOCompanionSym.matches(fn) =>
           Patch.lint(UnusedIODiagnostic(outer))
-        case Term.Apply.Initial(fn @ Term.Name(_), _) =>
+        case Term.Apply.After_4_6_0(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
         case Term.ApplyUnary(fn @ Term.Name(_), _) =>
           checkSignature(outer, fn)
-        case Term.ApplyUsing.Initial(fn @ Term.Name(_), _) =>
-          checkSignature(outer, fn)
         case Term.Select(_, prop @ Term.Name(_)) =>
           checkSignature(outer, prop)
-        case Term.Apply.Initial(Term.Select(_, method), _) =>
+        case Term.Apply.After_4_6_0(Term.Select(_, method), _) =>
           checkSignature(outer, method)
         case Term.Annotate(expr, _) =>
           checkInner(expr)

@@ -7,6 +7,7 @@ lazy val CatsVersion       = "2.12.0"
 lazy val CatsEffectVersion = "3.6.3"
 lazy val Fs2Version        = "3.12.2"
 lazy val Http4sVersion     = "0.23.32"
+lazy val MtlVersion        = "1.7.0"
 
 ThisBuild / startYear := Some(2022)
 ThisBuild / developers ++= List(
@@ -19,12 +20,12 @@ ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaV
 
 lazy val `typelevel-scalafix` = project
   .in(file("."))
-  .aggregate(`typelevel-scalafix-rules`, cats.all, catsEffect.all, fs2.all, http4s.all)
+  .aggregate(`typelevel-scalafix-rules`, cats.all, catsEffect.all, fs2.all, http4s.all, mtl.all)
   .enablePlugins(NoPublishPlugin)
 
 lazy val `typelevel-scalafix-rules` = project
   .in(file("target/rules-aggregate"))
-  .dependsOn(cats.rules, catsEffect.rules, fs2.rules, http4s.rules)
+  .dependsOn(cats.rules, catsEffect.rules, fs2.rules, http4s.rules, mtl.rules)
   .settings(
     moduleName := "typelevel-scalafix",
     tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.1.2").toMap,
@@ -81,5 +82,19 @@ lazy val http4s = scalafixProject("http4s")
   .outputSettings(
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-core" % Http4sVersion
+    )
+  )
+
+// typelevel/mtl Scalafix rules
+lazy val mtl = scalafixProject("mtl")
+  .rulesSettings(
+    tlVersionIntroduced ++= List("2.12", "2.13").map(_ -> "0.6.0").toMap
+  )
+  .inputSettings(
+    scalaVersion       := "3.7.2",
+    crossScalaVersions := Seq(V.scala213, "3.7.2"),
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % CatsEffectVersion,
+      "org.typelevel" %% "cats-mtl"    % MtlVersion
     )
   )
