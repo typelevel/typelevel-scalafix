@@ -14,9 +14,8 @@ ThisBuild / developers ++= List(
   tlGitHubDev("DavidGregory084", "David Gregory")
 )
 
-ThisBuild / semanticdbEnabled          := true
-ThisBuild / semanticdbVersion          := scalafixSemanticdb.revision
-ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value)
+ThisBuild / semanticdbEnabled := true
+ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 
 lazy val `typelevel-scalafix` = project
   .in(file("."))
@@ -36,6 +35,11 @@ lazy val `typelevel-scalafix-rules` = project
 // typelevel/cats Scalafix rules
 lazy val cats = scalafixProject("cats")
   .inputSettings(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % CatsVersion
+    )
+  )
+  .outputSettings(
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % CatsVersion
     )
