@@ -3,7 +3,7 @@ ThisBuild / tlBaseVersion := "0.5"
 ThisBuild / crossScalaVersions := Seq(V.scala213, V.scala212)
 ThisBuild / scalaVersion       := (ThisBuild / crossScalaVersions).value.head
 
-lazy val CatsVersion       = "2.12.0"
+lazy val CatsVersion       = "2.13.0"
 lazy val CatsEffectVersion = "3.6.3"
 lazy val Fs2Version        = "3.12.2"
 lazy val Http4sVersion     = "0.23.32"
@@ -36,6 +36,11 @@ lazy val `typelevel-scalafix-rules` = project
 // typelevel/cats Scalafix rules
 lazy val cats = scalafixProject("cats")
   .inputSettings(
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-core" % CatsVersion
+    )
+  )
+  .outputSettings(
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % CatsVersion
     )
