@@ -38,6 +38,7 @@ Once enabled, you can configure the rules that will run when you use the `scalaf
 rules = [
   TypelevelUnusedIO
   TypelevelMapSequence
+  TypelevelVoid
   TypelevelAs
   TypelevelUnusedShowInterpolator
   TypelevelFs2SyncCompiler
@@ -61,6 +62,7 @@ Not all rules function with Scala 3 yet.
 | TypelevelUnusedIO               | :white_check_mark: | :x:                |
 | TypelevelIORandomUUID           | :white_check_mark: | :white_check_mark: |
 | TypelevelMapSequence            | :white_check_mark: | :white_check_mark: |
+| TypelevelVoid                   | :white_check_mark: | :white_check_mark: |
 | TypelevelAs                     | :white_check_mark: | :white_check_mark: |
 | TypelevelUnusedShowInterpolator | :white_check_mark: | :x:                |
 | TypelevelFs2SyncCompiler        | :white_check_mark: | :x:                |
@@ -68,6 +70,30 @@ Not all rules function with Scala 3 yet.
 | TypelevelMTLSubmarine           | :white_check_mark: | :white_check_mark: |
 
 ## Rules for cats
+
+### TypelevelVoid
+
+This rule rewrites Cats calls to the deprecated underscore methods to their `Void` counterparts:
+
+- `sequence_` => `sequenceVoid`
+- `traverse_` => `traverseVoid`
+- `nonEmptySequence_` => `nonEmptySequenceVoid`
+- `nonEmptyTraverse_` => `nonEmptyTraverseVoid`
+- `parSequence_` => `parSequenceVoid`
+- `parTraverse_` => `parTraverseVoid`
+- `parNonEmptySequence_` => `parNonEmptySequenceVoid`
+- `parNonEmptyTraverse_` => `parNonEmptyTraverseVoid`
+
+**Examples**
+
+```scala
+val sequence = List(Option(1)).sequence_
+```
+
+would be rewritten to
+```scala
+val sequence = List(Option(1)).sequenceVoid
+```
 
 ### TypelevelMapSequence
 
